@@ -11,10 +11,11 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
+import androidx.compose.ui.tooling.preview.Preview
 import kotlin.time.TimeSource
 
 @Composable
+@Preview
 fun TimerScreen() {
     var elapsedDuration by remember { mutableStateOf(Duration.ZERO) }
     var isRunning by remember { mutableStateOf(false) }

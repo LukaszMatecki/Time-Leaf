@@ -27,7 +27,7 @@ kotlin {
            jvmTarget = JvmTarget.JVM_11
        }
        androidResources {
-           enable = true
+          enable = true
        }
        withHostTest {
            isIncludeAndroidResources = true

@@ -1,5 +1,6 @@
 package com.lumatech.timeleaf
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,127 +25,100 @@ fun SettingsScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Text(
             text = "Ustawienia",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(bottom = 4.dp, top = 8.dp)
-        )
-        Text(
-            text = "Dostosuj działanie aplikacji i powiadomień",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 20.dp)
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Black,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
         )
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Section 1: Powiadomienia i dźwięk
             item {
-                SettingsSectionHeader("🔔 Powiadomienia i Dźwięk")
-                Spacer(modifier = Modifier.height(8.dp))
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Column(modifier = Modifier.padding(8.dp)) {
-                        SettingSwitchItem(
-                            title = "Powiadomienia push",
-                            description = "Alerty po zakończeniu sesji",
-                            checked = notificationsEnabled,
-                            onCheckedChange = { notificationsEnabled = it }
-                        )
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                        SettingSwitchItem(
-                            title = "Dźwięk alarmu",
-                            description = "Odtwarzaj dźwięk po odliczeniu czasu",
-                            checked = soundEnabled,
-                            onCheckedChange = { soundEnabled = it }
-                        )
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                        SettingSwitchItem(
-                            title = "Wibracje",
-                            description = "Wibruj przy zakończeniu",
-                            checked = vibrationEnabled,
-                            onCheckedChange = { vibrationEnabled = it }
-                        )
-                    }
+                SettingsSectionHeader("Powiadomienia i Dźwięk")
+                SettingsCard {
+                    SettingSwitchItem(
+                        title = "Powiadomienia push",
+                        description = "Alerty po zakończeniu sesji",
+                        checked = notificationsEnabled,
+                        onCheckedChange = { notificationsEnabled = it }
+                    )
+                    MinimalDivider()
+                    SettingSwitchItem(
+                        title = "Dźwięk alarmu",
+                        description = "Odtwarzaj dźwięk po odliczeniu czasu",
+                        checked = soundEnabled,
+                        onCheckedChange = { soundEnabled = it }
+                    )
+                    MinimalDivider()
+                    SettingSwitchItem(
+                        title = "Wibracje",
+                        description = "Wibruj przy zakończeniu",
+                        checked = vibrationEnabled,
+                        onCheckedChange = { vibrationEnabled = it }
+                    )
                 }
             }
 
-            // Section 2: Zachowanie Timera
             item {
-                SettingsSectionHeader("⏱️ Zachowanie Timera")
-                Spacer(modifier = Modifier.height(8.dp))
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Column(modifier = Modifier.padding(8.dp)) {
-                        SettingSwitchItem(
-                            title = "Automatyczna przerwa",
-                            description = "Włącz przerwę po zakończeniu skupienia",
-                            checked = autoStartBreaks,
-                            onCheckedChange = { autoStartBreaks = it }
-                        )
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                        SettingSwitchItem(
-                            title = "Nie wygaszaj ekranu",
-                            description = "Trzymaj ekran włączony podczas timera",
-                            checked = keepScreenAwake,
-                            onCheckedChange = { keepScreenAwake = it }
-                        )
-                    }
+                SettingsSectionHeader("Zachowanie Timera")
+                SettingsCard {
+                    SettingSwitchItem(
+                        title = "Automatyczna przerwa",
+                        description = "Włącz przerwę po zakończeniu skupienia",
+                        checked = autoStartBreaks,
+                        onCheckedChange = { autoStartBreaks = it }
+                    )
+                    MinimalDivider()
+                    SettingSwitchItem(
+                        title = "Nie wygaszaj ekranu",
+                        description = "Trzymaj ekran włączony podczas timera",
+                        checked = keepScreenAwake,
+                        onCheckedChange = { keepScreenAwake = it }
+                    )
                 }
             }
 
-            // Section 3: Wygląd i Motyw
             item {
-                SettingsSectionHeader("🎨 Wygląd")
-                Spacer(modifier = Modifier.height(8.dp))
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Column(modifier = Modifier.padding(8.dp)) {
-                        SettingSwitchItem(
-                            title = "Ciemny motyw",
-                            description = "Używaj ciemnej palety kolorów",
-                            checked = darkModeEnabled,
-                            onCheckedChange = { darkModeEnabled = it }
-                        )
-                    }
+                SettingsSectionHeader("Wygląd")
+                SettingsCard {
+                    SettingSwitchItem(
+                        title = "Ciemny motyw",
+                        description = "Używaj ciemnej palety kolorów",
+                        checked = darkModeEnabled,
+                        onCheckedChange = { darkModeEnabled = it }
+                    )
                 }
             }
 
-            // Section 4: O aplikacji
             item {
-                SettingsSectionHeader("ℹ️ Informacje")
-                Spacer(modifier = Modifier.height(8.dp))
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
+                SettingsSectionHeader("Informacje")
+                SettingsCard {
                     Column(
-                        modifier = Modifier.padding(20.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp)
                     ) {
                         Text(
-                            text = "TimeLeaf v1.0.0",
+                            text = "TimeLeaf",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurface
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Wersja 1.0.0",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = "Nowoczesna aplikacja do zarządzania czasem i skupieniem. Stworzona w Kotlin Multiplatform.",
                             style = MaterialTheme.typography.bodyMedium,
@@ -159,13 +133,36 @@ fun SettingsScreen() {
 }
 
 @Composable
+fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 8.dp),
+            content = content
+        )
+    }
+}
+
+@Composable
 fun SettingsSectionHeader(title: String) {
     Text(
         text = title,
-        style = MaterialTheme.typography.titleSmall,
+        style = MaterialTheme.typography.labelLarge,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 4.dp)
+        modifier = Modifier.padding(start = 12.dp, bottom = 8.dp)
+    )
+}
+
+@Composable
+fun MinimalDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(horizontal = 20.dp),
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
     )
 }
 
@@ -179,26 +176,26 @@ fun SettingSwitchItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(12.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(end = 12.dp)
+                .padding(end = 16.dp)
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
             )
         }
         Switch(

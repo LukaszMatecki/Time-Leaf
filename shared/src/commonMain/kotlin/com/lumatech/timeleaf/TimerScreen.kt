@@ -1,13 +1,18 @@
 package com.lumatech.timeleaf
 
+import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
@@ -18,6 +23,11 @@ import kotlinx.coroutines.isActive
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.TimeSource
+import org.jetbrains.compose.resources.painterResource
+import timeleaf.shared.generated.resources.Res
+import timeleaf.shared.generated.resources.baseline_play_circle_outline_24
+import timeleaf.shared.generated.resources.baseline_pause_circle_24
+import timeleaf.shared.generated.resources.baseline_stop_circle_24
 
 @Composable
 fun TimerScreen() {
@@ -42,7 +52,7 @@ fun TimerScreen() {
                 } else {
                     manager.remainingDuration += elapsed
                 }
-                delay(16) // ~60fps smooth update
+                delay(16)
             }
         }
     }
@@ -58,47 +68,39 @@ fun TimerScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .background(MaterialTheme.colorScheme.background)
+            .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.Center
     ) {
-        // Header
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = if (manager.isCountdownMode) "⏳ Odliczanie skupienia" else "⏱️ Stoper",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = if (manager.isCountdownMode) "Cel: ${manager.targetDuration.inWholeMinutes} min" else "Tryb ciągły",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        // Circular Timer Display
         Box(
             modifier = Modifier
-                .size(280.dp)
+                .fillMaxWidth()
+                .aspectRatio(1f)
                 .padding(16.dp),
             contentAlignment = Alignment.Center
         ) {
-            val primaryColor = MaterialTheme.colorScheme.primary
-            val surfaceVariantColor = MaterialTheme.colorScheme.surfaceVariant
+            val surfaceVariantColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+            val greenStart = Color(0xFF10B981)
+            val greenEnd = Color(0xFF34D399)
+
+            val gradientBrush = remember {
+                Brush.linearGradient(
+                    colors = listOf(greenStart, greenEnd)
+                )
+            }
 
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val strokeWidth = 16.dp.toPx()
-                // Background track
+
                 drawCircle(
                     color = surfaceVariantColor,
                     radius = (size.minDimension - strokeWidth) / 2f,
                     style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                 )
-                // Progress arc
+
                 drawArc(
-                    color = primaryColor,
+                    brush = gradientBrush,
                     startAngle = -90f,
                     sweepAngle = 360f * animatedProgress,
                     useCenter = false,
@@ -106,60 +108,98 @@ fun TimerScreen() {
                 )
             }
 
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = formatDuration(manager.remainingDuration),
-                    fontSize = 42.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = if (manager.isRunning) "Trwa..." else "Zatrzymany",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
+            Text(
+                text = formatDuration(manager.remainingDuration),
+                fontSize = 56.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.align(Alignment.Center)
+            )
         }
 
-        // Control Buttons Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        Spacer(modifier = Modifier.height(56.dp))
+
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedButton(
-                    onClick = { manager.reset() },
-                    modifier = Modifier.height(48.dp).weight(1f),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text("Reset", fontWeight = FontWeight.SemiBold)
-                }
+            val isRunning = manager.isRunning
+            val hasProgress = manager.remainingDuration < manager.targetDuration && manager.remainingDuration > ZERO
 
-                Spacer(modifier = Modifier.width(16.dp))
+            AnimatedContent(
+                targetState = !isRunning && !hasProgress,
+                transitionSpec = { fadeIn() + scaleIn() togetherWith fadeOut() + scaleOut() },
+                label = "TimerControls"
+            ) { isInitial ->
+                if (isInitial) {
+                    Button(
+                        onClick = { manager.isRunning = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(Res.drawable.baseline_play_circle_outline_24),
+                            contentDescription = "Start",
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Rozpocznij Skupienie", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedButton(
+                            onClick = { manager.reset() },
+                            modifier = Modifier
+                                .height(56.dp)
+                                .weight(1f),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f))
+                        ) {
+                            Icon(
+                                painter = painterResource(Res.drawable.baseline_stop_circle_24),
+                                contentDescription = "Stop",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Stop", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                        }
 
-                Button(
-                    onClick = { manager.isRunning = !manager.isRunning },
-                    modifier = Modifier.height(48.dp).weight(1f),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (manager.isRunning) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primary,
-                        contentColor = if (manager.isRunning) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimary
-                    )
-                ) {
-                    Text(if (manager.isRunning) "Pauza" else "Start", fontWeight = FontWeight.Bold)
+                        Button(
+                            onClick = { manager.isRunning = !manager.isRunning },
+                            modifier = Modifier
+                                .height(56.dp)
+                                .weight(1f),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isRunning) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
+                                contentColor = if (isRunning) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(if (isRunning) Res.drawable.baseline_pause_circle_24 else Res.drawable.baseline_play_circle_outline_24),
+                                contentDescription = if (isRunning) "Pauza" else "Wznów",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(if (isRunning) "Pauza" else "Wznów", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                        }
+                    }
                 }
             }
         }

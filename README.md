@@ -17,9 +17,6 @@ Projekt jest również przykładem zastosowania współdzielonej architektury w 
 * **Focus Timer**
   Timer przeznaczony do realizacji sesji pracy w skupieniu. Stan sesji jest oparty na znacznikach czasu, dzięki czemu aplikacja poprawnie obsługuje przejście do tła.
 
-* **Forest Grid**
-  Ukończone sesje wpływają na rozwój wirtualnego ogrodu. Widok siatki prezentuje rośliny i drzewa odpowiadające postępom użytkownika.
-
 * **Historia sesji**
   Dane ukończonych sesji są zapisywane lokalnie i mogą być wykorzystywane do prezentowania statystyk oraz postępów.
 
@@ -27,7 +24,7 @@ Projekt jest również przykładem zastosowania współdzielonej architektury w 
   Aplikacja nie wymaga logowania ani połączenia z zewnętrznym serwerem. Dane pozostają na urządzeniu użytkownika.
 
 * **Współdzielony kod Android/iOS**
-  Logika biznesowa, dostęp do danych oraz większość interfejsu jest współdzielona pomiędzy platformami za pomocą Kotlin Multiplatform i Compose Multiplatform.
+  Logika, dostęp do danych oraz większość interfejsu jest współdzielona pomiędzy platformami za pomocą Kotlin Multiplatform i Compose Multiplatform.
 
 * **Custom UI**
   Interfejs został przygotowany bez korzystania z gotowego szablonu aplikacji. Wykorzystuje m.in. własne komponenty Compose, rysowanie za pomocą `Canvas`, niestandardowe modyfikatory oraz obsługę interfejsu edge-to-edge.
@@ -40,57 +37,7 @@ Projekt jest również przykładem zastosowania współdzielonej architektury w 
 | Multiplatform        | Kotlin Multiplatform              |
 | UI                   | Compose Multiplatform             |
 | Architektura         | Clean Architecture, MVVM/MVI, UDF |
-| Stan aplikacji       | Coroutines, StateFlow             |
-| Data i czas          | kotlinx-datetime                  |
-| Baza danych          | Room KMP                          |
-| Code generation      | KSP                               |
-| Dependency Injection | Koin                              |
 | Platformy            | Android, iOS                      |
-
-## Architektura
-
-Projekt wykorzystuje podział na warstwy inspirowany **Clean Architecture**. Celem jest oddzielenie logiki biznesowej od szczegółów implementacyjnych platformy oraz infrastruktury.
-
-### `domain/`
-
-Warstwa domenowa zawierająca logikę biznesową aplikacji.
-
-Znajdują się tutaj m.in.:
-
-* modele domenowe, np. `FocusSession`,
-* interfejsy repozytoriów,
-* przypadki użycia (Use Cases),
-* reguły związane z obsługą sesji i progresji.
-
-Warstwa domenowa nie zależy bezpośrednio od Room, Compose ani innych elementów infrastruktury.
-
-### `data/`
-
-Warstwa odpowiedzialna za dostęp do danych.
-
-Obejmuje m.in.:
-
-* encje i DAO dla Room,
-* implementacje repozytoriów,
-* mapowanie modeli bazodanowych na modele domenowe,
-* lokalne źródło danych aplikacji.
-
-Repozytoria pełnią rolę pośrednika pomiędzy warstwą domenową a konkretną implementacją przechowywania danych.
-
-### `presentation/`
-
-Warstwa odpowiedzialna za interfejs użytkownika oraz zarządzanie jego stanem.
-
-Zawiera m.in.:
-
-* ViewModele,
-* `StateFlow` reprezentujące stan UI,
-* ekrany Compose,
-* komponenty UI,
-* motyw aplikacji,
-* logikę prezentacyjną.
-
-Stan przepływa jednokierunkowo od logiki aplikacji do interfejsu, zgodnie z założeniami **Unidirectional Data Flow**.
 
 ## Struktura projektu
 

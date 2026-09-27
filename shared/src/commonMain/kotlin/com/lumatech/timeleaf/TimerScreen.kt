@@ -2,7 +2,6 @@ package com.lumatech.timeleaf
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -30,6 +30,7 @@ import timeleaf.shared.generated.resources.baseline_pause_circle_24
 import timeleaf.shared.generated.resources.baseline_stop_circle_24
 
 @Composable
+@Preview
 fun TimerScreen() {
     val manager = sharedTimerManager
     var lastTickMark by remember { mutableStateOf(TimeSource.Monotonic.markNow()) }
@@ -150,7 +151,7 @@ fun TimerScreen() {
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("Rozpocznij Skupienie", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                        Text("Start", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                     }
                 } else {
                     Row(
@@ -158,17 +159,17 @@ fun TimerScreen() {
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        OutlinedButton(
+                        Button(
                             onClick = { manager.reset() },
                             modifier = Modifier
                                 .height(56.dp)
                                 .weight(1f),
                             shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                contentColor = MaterialTheme.colorScheme.error
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
                             ),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f))
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
                         ) {
                             Icon(
                                 painter = painterResource(Res.drawable.baseline_stop_circle_24),

@@ -14,13 +14,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import timeleaf.shared.generated.resources.Res
 import timeleaf.shared.generated.resources.baseline_bolt_24
 import timeleaf.shared.generated.resources.baseline_timer_24
 import timeleaf.shared.generated.resources.baseline_person_24
 import timeleaf.shared.generated.resources.baseline_settings_24
-import timeleaf.shared.generated.resources.baseline_arrow_back_ios_new_24
 
 private val ModernLightColorScheme = lightColorScheme(
     primary = Color(0xFF10B981),
@@ -163,20 +163,16 @@ fun App() {
                             .padding(24.dp),
                         contentAlignment = Alignment.TopEnd
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                            modifier = Modifier.size(48.dp),
-                            onClick = { showSettings = true }
+                        IconButton(
+                            onClick = { showSettings = true },
+                            modifier = Modifier.size(48.dp)
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    painter = painterResource(Res.drawable.baseline_settings_24),
-                                    contentDescription = "Ustawienia",
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
+                            Icon(
+                                painter = painterResource(Res.drawable.baseline_settings_24),
+                                contentDescription = "Ustawienia",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
                     }
                 }
@@ -188,35 +184,7 @@ fun App() {
                 exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut(),
                 modifier = Modifier.fillMaxSize()
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    SettingsScreen()
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .windowInsetsPadding(WindowInsets.statusBars)
-                            .padding(24.dp),
-                        contentAlignment = Alignment.TopStart
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
-                            modifier = Modifier.size(48.dp),
-                            onClick = { showSettings = false }
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    painter = painterResource(Res.drawable.baseline_arrow_back_ios_new_24),
-                                    contentDescription = "Wróć",
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.size(20.dp).offset(x = (-2).dp)
-                                )
-                            }
-                        }
-                    }
-                }
+                SettingsScreen(onBackClick = { showSettings = false })
             }
         }
     }
@@ -224,7 +192,7 @@ fun App() {
 
 @Composable
 private fun NavigationIcon(
-    iconRes: org.jetbrains.compose.resources.DrawableResource,
+    iconRes: DrawableResource,
     description: String,
     isSelected: Boolean,
     activeColor: Color,

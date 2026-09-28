@@ -1,10 +1,8 @@
 package com.lumatech.timeleaf
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.painterResource
 import timeleaf.shared.generated.resources.Res
 import timeleaf.shared.generated.resources.baseline_arrow_back_ios_new_24
@@ -31,34 +30,31 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
+        // Compact Header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(horizontal = 20.dp, vertical = 20.dp),
+                .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                modifier = Modifier.size(40.dp)
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier.size(32.dp)
             ) {
-                IconButton(onClick = onBackClick) {
-                    Icon(
-                        painter = painterResource(Res.drawable.baseline_arrow_back_ios_new_24),
-                        contentDescription = LocalizedStrings.btnBack,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(16.dp).offset(x = (-1).dp)
-                    )
-                }
+                Icon(
+                    painter = painterResource(Res.drawable.baseline_arrow_back_ios_new_24),
+                    contentDescription = LocalizedStrings.btnBack,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(15.dp).offset(x = (-1).dp)
+                )
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
 
             Text(
                 text = LocalizedStrings.settingsTitle,
-                style = MaterialTheme.typography.headlineMedium,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -66,8 +62,8 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 96.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 4.dp, bottom = 80.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Language Selection Section
             item {
@@ -76,50 +72,45 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
+                            .padding(12.dp)
                     ) {
                         Text(
                             text = LocalizedStrings.settingsLanguageLabel,
-                            style = MaterialTheme.typography.titleMedium,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = LocalizedStrings.settingsLanguageSub,
-                            style = MaterialTheme.typography.bodySmall,
+                            fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             AppLanguage.entries.forEach { lang ->
                                 val isSelected = currentAppLanguage == lang
                                 Surface(
                                     onClick = { currentAppLanguage = lang },
-                                    shape = RoundedCornerShape(16.dp),
-                                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                    border = BorderStroke(
-                                        1.dp,
-                                        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                                     modifier = Modifier
                                         .weight(1f)
-                                        .height(48.dp)
+                                        .height(36.dp)
                                 ) {
                                     Row(
                                         modifier = Modifier.fillMaxSize(),
                                         horizontalArrangement = Arrangement.Center,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text(lang.flag)
-                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(lang.flag, fontSize = 13.sp)
+                                        Spacer(modifier = Modifier.width(6.dp))
                                         Text(
                                             text = lang.displayName,
-                                            style = MaterialTheme.typography.labelLarge,
+                                            fontSize = 12.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                             color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -199,13 +190,12 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
 @Composable
 fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
     Surface(
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(vertical = 4.dp),
+            modifier = Modifier.padding(vertical = 2.dp),
             content = content
         )
     }
@@ -215,18 +205,18 @@ fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
 fun SettingsSectionHeader(title: String) {
     Text(
         text = title,
-        style = MaterialTheme.typography.labelMedium,
+        fontSize = 10.sp,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 12.dp, bottom = 8.dp)
+        modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
     )
 }
 
 @Composable
 fun MinimalDivider() {
     HorizontalDivider(
-        modifier = Modifier.padding(horizontal = 18.dp),
-        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+        modifier = Modifier.padding(horizontal = 14.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
     )
 }
 
@@ -240,25 +230,24 @@ fun SettingSwitchItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 18.dp, vertical = 12.dp),
+            .padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(end = 16.dp)
+                .padding(end = 10.dp)
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = description,
-                style = MaterialTheme.typography.bodySmall,
+                fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
         }

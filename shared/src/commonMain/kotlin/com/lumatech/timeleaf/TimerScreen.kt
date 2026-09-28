@@ -2,14 +2,21 @@ package com.lumatech.timeleaf
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -18,22 +25,33 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.ZERO
-import kotlin.time.TimeSource
 import org.jetbrains.compose.resources.painterResource
 import timeleaf.shared.generated.resources.Res
-import timeleaf.shared.generated.resources.baseline_play_circle_outline_24
+import timeleaf.shared.generated.resources.baseline_add_24
+import timeleaf.shared.generated.resources.baseline_notifications_off_24
 import timeleaf.shared.generated.resources.baseline_pause_circle_24
+import timeleaf.shared.generated.resources.baseline_play_circle_outline_24
 import timeleaf.shared.generated.resources.baseline_stop_circle_24
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.ZERO
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeSource
 
 @Composable
 @Preview
 fun TimerScreen() {
     val manager = sharedTimerManager
     var lastTickMark by remember { mutableStateOf(TimeSource.Monotonic.markNow()) }
+
+    var currentTask by remember { mutableStateOf<String?>(null) }
+    var showTaskDialog by remember { mutableStateOf(false) }
+    var taskInputText by remember { mutableStateOf("") }
 
     LaunchedEffect(manager.isRunning) {
         if (manager.isRunning) {
@@ -53,7 +71,7 @@ fun TimerScreen() {
                 } else {
                     manager.remainingDuration += elapsed
                 }
-                delay(16)
+                delay(16.milliseconds)
             }
         }
     }
@@ -64,40 +82,96 @@ fun TimerScreen() {
         1f
     }
 
-    val animatedProgress by animateFloatAsState(targetValue = progress)
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = tween(durationMillis = 300),
+        label = "progressAnimation"
+    )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(horizontal = 24.dp, vertical = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // --- TASK PILL (TAP TO EDIT TASK) ---
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+            shape = CircleShape,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+            shadowElevation = 2.dp,
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable {
+                    taskInputText = currentTask ?: ""
+                    showTaskDialog = true
+                }
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                if (currentTask.isNullByBlank()) {
+                    Icon(
+                        painter = painterResource(Res.drawable.baseline_add_24),
+                        contentDescription = LocalizedStrings.timerAddTask,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = LocalizedStrings.timerAddTask,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(MaterialTheme.colorScheme.primary, CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = currentTask!!,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(0.2f))
+
+        // --- TIMER RING ---
         Box(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.82f)
                 .aspectRatio(1f)
-                .padding(16.dp),
+                .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
-            val surfaceVariantColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
-            val greenStart = Color(0xFF10B981)
-            val greenEnd = Color(0xFF34D399)
+            val trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            val primaryColor = MaterialTheme.colorScheme.primary
+            val secondaryColor = MaterialTheme.colorScheme.secondary
 
-            val gradientBrush = remember {
-                Brush.linearGradient(
-                    colors = listOf(greenStart, greenEnd)
-                )
+            val gradientBrush = remember(primaryColor, secondaryColor) {
+                Brush.linearGradient(colors = listOf(primaryColor, secondaryColor))
             }
 
             Canvas(modifier = Modifier.fillMaxSize()) {
-                val strokeWidth = 16.dp.toPx()
+                val strokeWidth = 14.dp.toPx()
+                val radius = (size.minDimension - strokeWidth) / 2f
 
                 drawCircle(
-                    color = surfaceVariantColor,
-                    radius = (size.minDimension - strokeWidth) / 2f,
-                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                    color = trackColor,
+                    radius = radius,
+                    style = Stroke(width = strokeWidth)
                 )
 
                 drawArc(
@@ -107,19 +181,72 @@ fun TimerScreen() {
                     useCenter = false,
                     style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                 )
+
+                if (animatedProgress > 0f) {
+                    val angleInDegrees = -90f + (360f * animatedProgress)
+                    val angleInRad = angleInDegrees * (PI / 180f)
+                    val dotX = center.x + radius * cos(angleInRad).toFloat()
+                    val dotY = center.y + radius * sin(angleInRad).toFloat()
+                    drawCircle(
+                        color = Color.White,
+                        radius = strokeWidth / 2.6f,
+                        center = Offset(dotX, dotY)
+                    )
+                }
             }
 
-            Text(
-                text = formatDuration(manager.remainingDuration),
-                fontSize = 56.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.align(Alignment.Center)
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = formatDuration(manager.remainingDuration),
+                    fontSize = 54.sp,
+                    fontWeight = FontWeight.Light,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    letterSpacing = 1.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = LocalizedStrings.timerFocusTimeLabel,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(56.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
+        // --- DND PILL ---
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+            modifier = Modifier.alpha(0.7f)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(Res.drawable.baseline_notifications_off_24),
+                    contentDescription = LocalizedStrings.timerDndActive,
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = LocalizedStrings.timerDndActive,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(0.8f))
+
+        // --- CONTROLS ---
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
@@ -135,70 +262,127 @@ fun TimerScreen() {
                 if (isInitial) {
                     Button(
                         onClick = { manager.isRunning = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(64.dp),
-                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.height(56.dp),
+                        shape = CircleShape,
+                        contentPadding = PaddingValues(horizontal = 36.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
                     ) {
                         Icon(
                             painter = painterResource(Res.drawable.baseline_play_circle_outline_24),
-                            contentDescription = "Start",
-                            modifier = Modifier.size(24.dp)
+                            contentDescription = LocalizedStrings.btnStart,
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text("Start", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(LocalizedStrings.btnStart, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                 } else {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(20.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Button(
-                            onClick = { manager.reset() },
-                            modifier = Modifier
-                                .height(56.dp)
-                                .weight(1f),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error,
-                                contentColor = MaterialTheme.colorScheme.onError
-                            ),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surface,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            modifier = Modifier.size(56.dp)
                         ) {
-                            Icon(
-                                painter = painterResource(Res.drawable.baseline_stop_circle_24),
-                                contentDescription = "Stop",
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Stop", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                            IconButton(onClick = { manager.reset() }) {
+                                Icon(
+                                    painter = painterResource(Res.drawable.baseline_stop_circle_24),
+                                    contentDescription = LocalizedStrings.timerBtnStop,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         }
 
                         Button(
                             onClick = { manager.isRunning = !manager.isRunning },
-                            modifier = Modifier
-                                .height(56.dp)
-                                .weight(1f),
-                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.height(56.dp).widthIn(min = 150.dp),
+                            shape = CircleShape,
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isRunning) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
-                                contentColor = if (isRunning) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary
-                            ),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                                containerColor = if (isRunning) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primary,
+                                contentColor = if (isRunning) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimary
+                            )
                         ) {
                             Icon(
                                 painter = painterResource(if (isRunning) Res.drawable.baseline_pause_circle_24 else Res.drawable.baseline_play_circle_outline_24),
-                                contentDescription = if (isRunning) "Pauza" else "Wznów",
+                                contentDescription = if (isRunning) LocalizedStrings.timerBtnPause else LocalizedStrings.timerBtnResume,
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(if (isRunning) "Pauza" else "Wznów", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                            Text(
+                                if (isRunning) LocalizedStrings.timerBtnPause else LocalizedStrings.timerBtnResume,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(80.dp))
+    }
+
+    // --- TASK DIALOG ---
+    if (showTaskDialog) {
+        Dialog(onDismissRequest = { showTaskDialog = false }) {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = LocalizedStrings.taskDialogTitle,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = taskInputText,
+                        onValueChange = { taskInputText = it },
+                        label = { Text(LocalizedStrings.taskDialogInputLabel) },
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showTaskDialog = false },
+                            shape = CircleShape,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(LocalizedStrings.btnCancel)
+                        }
+
+                        Button(
+                            onClick = {
+                                currentTask = taskInputText.trim().ifBlank { null }
+                                showTaskDialog = false
+                            },
+                            shape = CircleShape,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(LocalizedStrings.btnAdd)
                         }
                     }
                 }
@@ -206,6 +390,8 @@ fun TimerScreen() {
         }
     }
 }
+
+private fun String?.isNullByBlank(): Boolean = this == null || this.isBlank()
 
 private fun formatDuration(duration: Duration): String {
     val totalSeconds = duration.inWholeSeconds

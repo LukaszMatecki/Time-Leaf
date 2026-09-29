@@ -21,8 +21,8 @@ object LocalizedStrings {
     val tilesHeaderSubtitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Wybierz preset lub stwórz własny czas" else "Pick a preset or create custom focus time"
     val tilesCustomCardTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Utwórz własną sesję" else "Create custom session"
     val tilesCustomCardSub: String get() = if (currentAppLanguage == AppLanguage.PL) "Skonfiguruj własną nazwę i czas" else "Configure custom title & duration"
-    val dialogCustomTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Nowy pomiar czasu" else "New custom timer"
-    val dialogSessionNameLabel: String get() = if (currentAppLanguage == AppLanguage.PL) "Nazwa sesji" else "Session name"
+    val dialogCustomTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Nowa sesja" else "New custom session"
+    val dialogSessionNameLabel: String get() = if (currentAppLanguage == AppLanguage.PL) "Nazwa nowej sesji..." else "Session name..."
     val dialogDurationLabel: String get() = if (currentAppLanguage == AppLanguage.PL) "Czas trwania" else "Duration"
     val btnCancel: String get() = if (currentAppLanguage == AppLanguage.PL) "Anuluj" else "Cancel"
     val btnAdd: String get() = if (currentAppLanguage == AppLanguage.PL) "Dodaj" else "Add"
@@ -47,7 +47,7 @@ object LocalizedStrings {
     val timerBtnResume: String get() = if (currentAppLanguage == AppLanguage.PL) "Wznów" else "Resume"
     val timerBtnStop: String get() = if (currentAppLanguage == AppLanguage.PL) "Stop" else "Stop"
     val taskDialogTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Co dzisiaj robisz?" else "What are you working on?"
-    val taskDialogInputLabel: String get() = if (currentAppLanguage == AppLanguage.PL) "Nazwa zadania" else "Task name"
+    val taskDialogInputLabel: String get() = if (currentAppLanguage == AppLanguage.PL) "Nazwa zadania..." else "Task name..."
 
     // ProfileScreen
     val profileTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Profil" else "Profile"
@@ -95,4 +95,9 @@ object LocalizedStrings {
     val settingsDarkModeTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Ciemny motyw" else "Dark theme"
     val settingsDarkModeSub: String get() = if (currentAppLanguage == AppLanguage.PL) "Ręczne przełączanie motywu" else "Manual theme override"
     val btnBack: String get() = if (currentAppLanguage == AppLanguage.PL) "Wróć" else "Back"
+
+    // Snackbars
+    val snackTimerStarted: String get() = if (currentAppLanguage == AppLanguage.PL) "Tryb skupienia włączony • Powiadomienia wyciszone 🔕" else "Focus mode active • Notifications muted 🔕"
+    val snackTimerReset: String get() = if (currentAppLanguage == AppLanguage.PL) "Timer zresetowany ⏱️" else "Timer reset ⏱️"
+    val snackPressAgainToExit: String get() = if (currentAppLanguage == AppLanguage.PL) "Naciśnij ponownie 'Wróć', aby wyjść z aplikacji" else "Press back again to exit"
 }

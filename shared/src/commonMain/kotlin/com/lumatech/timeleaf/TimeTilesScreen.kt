@@ -1,5 +1,6 @@
 package com.lumatech.timeleaf
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,11 +18,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import kotlin.time.Duration.Companion.minutes
 import org.jetbrains.compose.resources.painterResource
@@ -80,7 +81,6 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // --- HEADER ---
         Column(
             modifier = Modifier
                 .windowInsetsPadding(WindowInsets.statusBars)
@@ -88,66 +88,61 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
         ) {
             Text(
                 text = LocalizedStrings.tilesHeaderTitle,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Black,
+                style = MaterialTheme.typography.headlineSmall, // Mniejszy nagłówek
                 color = MaterialTheme.colorScheme.onBackground
             )
-            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = LocalizedStrings.tilesHeaderSubtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                style = MaterialTheme.typography.titleSmall, // Mniejszy podtytuł
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
             )
         }
 
-        // --- BENTO GRID ---
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 80.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 80.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item(span = { GridItemSpan(2) }) {
                 Surface(
                     onClick = { showCustomModal = true },
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surface,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(14.dp),
+                            .padding(20.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier.size(38.dp)
+                            modifier = Modifier.size(52.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     painter = painterResource(Res.drawable.baseline_add_24),
                                     contentDescription = LocalizedStrings.tilesCustomCardTitle,
                                     tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(26.dp)
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(20.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = LocalizedStrings.tilesCustomCardTitle,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = LocalizedStrings.tilesCustomCardSub,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                fontSize = 11.sp
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                             )
                         }
                     }
@@ -169,64 +164,68 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
         }
     }
 
-    // --- OVERHAULED CUSTOM SESSION DIALOG (INFINITE SCROLL ONLY) ---
     if (showCustomModal) {
         Dialog(onDismissRequest = { showCustomModal = false }) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp),
+                shape = RoundedCornerShape(28.dp),
                 color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 4.dp
+                tonalElevation = 0.dp,
+                shadowElevation = 8.dp
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp),
+                        .padding(28.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         text = LocalizedStrings.dialogCustomTitle,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     OutlinedTextField(
                         value = customTitle,
                         onValueChange = { customTitle = it },
-                        placeholder = { Text(LocalizedStrings.dialogSessionNameLabel, fontSize = 13.sp) },
-                        shape = RoundedCornerShape(12.dp),
+                        placeholder = { Text(LocalizedStrings.dialogSessionNameLabel, style = MaterialTheme.typography.bodyMedium) },
+                        shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
+                        textStyle = MaterialTheme.typography.titleMedium,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = Color.Transparent
+                            unfocusedBorderColor = Color.Transparent,
                         )
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                    // Pure Infinite Scroll Wheel Picker
                     ScrollableMinutePicker(
                         selectedMinutes = customMinutes,
                         onMinutesChanged = { customMinutes = it }
                     )
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        TextButton(
+                        Button(
                             onClick = { showCustomModal = false },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f).height(50.dp),
+                            shape = CircleShape,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         ) {
-                            Text(LocalizedStrings.btnCancel, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                            Text(LocalizedStrings.btnCancel, style = MaterialTheme.typography.titleMedium)
                         }
 
                         Button(
@@ -247,16 +246,14 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
                                 customMinutes = 30
                                 showCustomModal = false
                             },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(40.dp),
+                            modifier = Modifier.weight(1f).height(50.dp),
                             shape = CircleShape,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = MaterialTheme.colorScheme.onPrimary
                             )
                         ) {
-                            Text(LocalizedStrings.btnAdd, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(LocalizedStrings.btnAdd, style = MaterialTheme.typography.titleMedium)
                         }
                     }
                 }
@@ -273,16 +270,16 @@ private fun BentoTileCard(
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(20.dp),
         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
         modifier = Modifier
             .fillMaxWidth()
-            .height(105.dp)
+            .height(135.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(12.dp),
+                .padding(16.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
@@ -293,7 +290,7 @@ private fun BentoTileCard(
                 Surface(
                     shape = CircleShape,
                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(42.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         tile.iconContent(
@@ -303,9 +300,8 @@ private fun BentoTileCard(
                 }
 
                 Text(
-                    text = "${tile.durationMinutes} m",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Black,
+                    text = "${tile.durationMinutes} min",
+                    style = MaterialTheme.typography.titleMedium,
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -313,16 +309,14 @@ private fun BentoTileCard(
             Column {
                 Text(
                     text = tile.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium,
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
                     maxLines = 1
                 )
                 Text(
                     text = tile.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                     maxLines = 1
                 )
             }
@@ -345,23 +339,30 @@ fun ScrollableMinutePicker(selectedMinutes: Int, onMinutesChanged: (Int) -> Unit
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(110.dp),
+            .height(160.dp),
         contentAlignment = Alignment.Center
     ) {
-        Surface(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(34.dp)
-                .padding(horizontal = 24.dp),
-            shape = RoundedCornerShape(10.dp),
-            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-        ) {}
+                .fillMaxWidth(0.7f)
+                .height(48.dp)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.02f),
+                            Color.Black.copy(alpha = 0.08f),
+                            Color.Black.copy(alpha = 0.02f)
+                        )
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                )
+        )
 
         LazyColumn(
             state = listState,
             flingBehavior = flingBehavior,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(vertical = 38.dp),
+            contentPadding = PaddingValues(vertical = 56.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             items(120) { index ->
@@ -370,15 +371,14 @@ fun ScrollableMinutePicker(selectedMinutes: Int, onMinutesChanged: (Int) -> Unit
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(34.dp)
+                        .height(48.dp)
                         .clickable { onMinutesChanged(minutes) },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "$minutes min",
-                        style = if (isSelected) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodySmall,
-                        fontWeight = if (isSelected) FontWeight.Black else FontWeight.Normal,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        style = if (isSelected) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleMedium,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                 }
             }
@@ -387,21 +387,10 @@ fun ScrollableMinutePicker(selectedMinutes: Int, onMinutesChanged: (Int) -> Unit
 }
 
 @Composable
-fun BoltVectorIcon(tint: Color) {
-    Icon(painterResource(Res.drawable.baseline_bolt_24), contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
-}
-
+fun BoltVectorIcon(tint: Color) { Icon(painterResource(Res.drawable.baseline_bolt_24), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp)) }
 @Composable
-fun TimerTileVectorIcon(tint: Color) {
-    Icon(painterResource(Res.drawable.baseline_timer_24), contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
-}
-
+fun TimerTileVectorIcon(tint: Color) { Icon(painterResource(Res.drawable.baseline_timer_24), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp)) }
 @Composable
-fun WorkVectorIcon(tint: Color) {
-    Icon(painterResource(Res.drawable.baseline_schedule_24), contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
-}
-
+fun WorkVectorIcon(tint: Color) { Icon(painterResource(Res.drawable.baseline_schedule_24), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp)) }
 @Composable
-fun StarVectorIcon(tint: Color) {
-    Icon(painterResource(Res.drawable.baseline_star_24), contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
-}
+fun StarVectorIcon(tint: Color) { Icon(painterResource(Res.drawable.baseline_star_24), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp)) }

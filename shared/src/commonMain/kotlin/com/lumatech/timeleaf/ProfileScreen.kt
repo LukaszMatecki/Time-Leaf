@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.painterResource
 import timeleaf.shared.generated.resources.Res
 import timeleaf.shared.generated.resources.baseline_arrow_back_ios_new_24
@@ -67,7 +68,6 @@ private fun ProfileMainView(onOpenAchievements: () -> Unit) {
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // User Header Card
             item {
                 Surface(
                     shape = RoundedCornerShape(20.dp),
@@ -120,7 +120,6 @@ private fun ProfileMainView(onOpenAchievements: () -> Unit) {
                 }
             }
 
-            // Stats Row
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -139,7 +138,6 @@ private fun ProfileMainView(onOpenAchievements: () -> Unit) {
                 }
             }
 
-            // Achievements Card Button
             item {
                 Surface(
                     onClick = onOpenAchievements,
@@ -209,7 +207,6 @@ private fun AchievementsScreen(onBackClick: () -> Unit) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header with back button
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -315,7 +312,7 @@ fun StatCard(title: String, value: String, modifier: Modifier = Modifier) {
 @Composable
 fun AchievementCardItem(title: String, description: String, isUnlocked: Boolean) {
     Surface(
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(22.dp),
         color = if (isUnlocked) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.surface,
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -335,7 +332,7 @@ fun AchievementCardItem(title: String, description: String, isUnlocked: Boolean)
                         painter = painterResource(Res.drawable.baseline_star_24),
                         contentDescription = null,
                         tint = if (isUnlocked) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -343,38 +340,33 @@ fun AchievementCardItem(title: String, description: String, isUnlocked: Boolean)
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isUnlocked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Surface(
-                        shape = CircleShape,
-                        color = if (isUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-                    ) {
-                        Text(
-                            text = if (isUnlocked) LocalizedStrings.achievementUnlocked else LocalizedStrings.achievementLocked,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isUnlocked) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(2.dp))
-
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 16.sp,
+                    color = if (isUnlocked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                )
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
+                    lineHeight = 14.sp,
                     color = if (isUnlocked) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Surface(
+                shape = CircleShape,
+                color = if (isUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Text(
+                    text = if (isUnlocked) LocalizedStrings.achievementUnlocked else LocalizedStrings.achievementLocked,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isUnlocked) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
                 )
             }
         }

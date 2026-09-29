@@ -53,13 +53,13 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
         ) {
             IconButton(
                 onClick = onBackClick,
-                modifier = Modifier.size(52.dp)
+                modifier = Modifier.size(36.dp)
             ) {
                 Icon(
                     painter = painterResource(Res.drawable.baseline_arrow_back_ios_new_24),
                     contentDescription = LocalizedStrings.btnBack,
                     tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(26.dp).offset(x = (-2).dp)
+                    modifier = Modifier.size(16.dp).offset(x = (-1).dp)
                 )
             }
 
@@ -73,7 +73,7 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
             )
 
             Spacer(modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.size(52.dp))
+            Spacer(modifier = Modifier.size(36.dp))
         }
 
         LazyColumn(
@@ -96,7 +96,8 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
 
             item {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    val currentShortLang = if (currentAppLanguage.name.contains("POL", ignoreCase = true)) "PL" else "ENG"
+                    val currentShortLang = if (currentAppLanguage.name.contains("POL", ignoreCase = true) ||
+                        currentAppLanguage.name.contains("PL", ignoreCase = true)) "PL" else "ENG"
 
                     SettingsDropdownItem(
                         iconRes = Res.drawable.baseline_translate_24,
@@ -108,35 +109,43 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
 
                     AnimatedVisibility(visible = languageExpanded) {
                         Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 10.dp)
+                            shape = RoundedCornerShape(
+                                topStart = 0.dp,
+                                topEnd = 0.dp,
+                                bottomStart = 22.dp,
+                                bottomEnd = 22.dp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.padding(vertical = 12.dp)) {
+                            Column {
                                 AppLanguage.entries.forEach { lang ->
-                                    // Rozwiązanie problemu z podwójnym "ENGLISH"
                                     val langFullName = when {
-                                        lang.name.contains("POL", ignoreCase = true) -> "POLSKI"
+                                        lang.name.contains("POL", ignoreCase = true) || lang.name.contains("PL", ignoreCase = true) -> "POLSKI"
                                         lang.name.contains("ENG", ignoreCase = true) -> "ENGLISH"
                                         else -> lang.displayName.uppercase()
                                     }
 
+                                    val isSelected = lang == currentAppLanguage
+
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
+                                            .background(
+                                                if (isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                                                else Color.Transparent
+                                            )
                                             .clickable {
                                                 currentAppLanguage = lang
                                                 languageExpanded = false
                                             }
-                                            .padding(horizontal = 28.dp, vertical = 20.dp),
+                                            .padding(horizontal = 24.dp, vertical = 20.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
                                             text = langFullName,
-                                            fontSize = 22.sp,
-                                            fontWeight = if (lang == currentAppLanguage) FontWeight.Bold else FontWeight.Medium,
+                                            fontSize = 20.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
@@ -172,13 +181,13 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
 
             item {
                 Spacer(modifier = Modifier.height(16.dp))
-                SettingsSectionHeader("O aplikacji i Pomoc")
+                SettingsSectionHeader(LocalizedStrings.settingsSectionAbout)
             }
 
             item {
                 SettingsActionItem(
                     iconRes = Res.drawable.baseline_star_24,
-                    title = "Oceń naszą aplikację",
+                    title = LocalizedStrings.settingsRateApp,
                     trailingText = "↗",
                     onClick = {
                         try {
@@ -205,8 +214,9 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
         Dialog(onDismissRequest = { showAboutDialog = false }) {
             Surface(
                 shape = RoundedCornerShape(28.dp),
-                color = Color.White, // Sztywne białe tło zamiast surface
-                tonalElevation = 8.dp,
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 0.dp,
+                shadowElevation = 8.dp,
                 modifier = Modifier.widthIn(max = 360.dp)
             ) {
                 Column(
@@ -234,20 +244,20 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                         text = "TimeLeaf",
                         fontSize = 30.sp,
                         fontWeight = FontWeight.Black,
-                        color = Color.Black
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Text(
-                        text = "Wersja 1.0.0",
+                        text = LocalizedStrings.aboutDialogVersion,
                         fontSize = 18.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 6.dp, bottom = 24.dp)
                     )
 
                     Text(
-                        text = "Aplikacja stworzona przez Lumatech. Pomagamy Ci zarządzać czasem i skupieniem podczas codziennych zadań.",
+                        text = LocalizedStrings.aboutDialogDesc,
                         fontSize = 18.sp,
-                        color = Color.DarkGray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                         lineHeight = 26.sp
                     )
@@ -264,7 +274,7 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                         )
                     ) {
                         Text(
-                            text = "Zamknij",
+                            text = LocalizedStrings.btnClose,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -314,7 +324,7 @@ private fun SettingsSwitchItem(
                 Icon(
                     painter = painterResource(iconRes),
                     contentDescription = title,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant, // Szary tint ikon
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(30.dp)
                 )
                 Spacer(modifier = Modifier.width(20.dp))
@@ -351,7 +361,12 @@ private fun SettingsDropdownItem(
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(
+            topStart = 22.dp,
+            topEnd = 22.dp,
+            bottomStart = if (isExpanded) 0.dp else 22.dp,
+            bottomEnd = if (isExpanded) 0.dp else 22.dp
+        ),
         color = MaterialTheme.colorScheme.surface,
         modifier = Modifier
             .fillMaxWidth()
@@ -371,7 +386,7 @@ private fun SettingsDropdownItem(
                 Icon(
                     painter = painterResource(iconRes),
                     contentDescription = title,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant, // Szary tint ikon
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(30.dp)
                 )
                 Spacer(modifier = Modifier.width(20.dp))
@@ -431,7 +446,7 @@ private fun SettingsActionItem(
                 Icon(
                     painter = painterResource(iconRes),
                     contentDescription = title,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant, // Szary tint ikon
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(30.dp)
                 )
                 Spacer(modifier = Modifier.width(20.dp))

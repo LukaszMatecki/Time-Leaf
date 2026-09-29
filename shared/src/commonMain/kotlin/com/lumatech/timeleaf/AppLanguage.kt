@@ -95,6 +95,11 @@ object LocalizedStrings {
     val settingsDarkModeTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Ciemny motyw" else "Dark theme"
     val settingsDarkModeSub: String get() = if (currentAppLanguage == AppLanguage.PL) "Ręczne przełączanie motywu" else "Manual theme override"
     val btnBack: String get() = if (currentAppLanguage == AppLanguage.PL) "Wróć" else "Back"
+    val settingsSectionAbout: String get() = if (currentAppLanguage == AppLanguage.PL) "O aplikacji i Pomoc" else "About App & Help"
+    val settingsRateApp: String get() = if (currentAppLanguage == AppLanguage.PL) "Oceń naszą aplikację" else "Rate our app"
+    val aboutDialogVersion: String get() = if (currentAppLanguage == AppLanguage.PL) "Wersja 1.0.0" else "Version 1.0.0"
+    val aboutDialogDesc: String get() = if (currentAppLanguage == AppLanguage.PL) "Aplikacja stworzona przez Lumatech. Pomagamy Ci zarządzać czasem i skupieniem podczas codziennych zadań." else "Created by Lumatech. Helping you manage time and focus during daily tasks."
+    val btnClose: String get() = if (currentAppLanguage == AppLanguage.PL) "Zamknij" else "Close"
 
     // Snackbars
     val snackTimerStarted: String get() = if (currentAppLanguage == AppLanguage.PL) "Tryb skupienia włączony • Powiadomienia wyciszone 🔕" else "Focus mode active • Notifications muted 🔕"

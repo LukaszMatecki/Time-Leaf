@@ -164,7 +164,7 @@ fun App() {
                 Box(
                     modifier = Modifier
                         .navigationBarsPadding()
-                        .padding(bottom = 20.dp),
+                        .padding(bottom = 30.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Surface(

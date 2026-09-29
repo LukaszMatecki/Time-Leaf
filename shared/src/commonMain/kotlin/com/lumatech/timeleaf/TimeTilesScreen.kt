@@ -88,12 +88,12 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
         ) {
             Text(
                 text = LocalizedStrings.tilesHeaderTitle,
-                style = MaterialTheme.typography.headlineSmall, // Mniejszy nagłówek
+                style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
                 text = LocalizedStrings.tilesHeaderSubtitle,
-                style = MaterialTheme.typography.titleSmall, // Mniejszy podtytuł
+                style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
             )
         }
@@ -344,17 +344,16 @@ fun ScrollableMinutePicker(selectedMinutes: Int, onMinutesChanged: (Int) -> Unit
     ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth(0.7f)
+                .fillMaxWidth()
                 .height(48.dp)
                 .background(
-                    brush = Brush.verticalGradient(
+                    brush = Brush.horizontalGradient( // <- Zmiana na horizontalGradient
                         colors = listOf(
-                            Color.Black.copy(alpha = 0.02f),
-                            Color.Black.copy(alpha = 0.08f),
-                            Color.Black.copy(alpha = 0.02f)
+                            Color.Transparent,
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                            Color.Transparent
                         )
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                    )
                 )
         )
 

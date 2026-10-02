@@ -80,18 +80,6 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
         }
     }
 
-    val exactProgress = if (manager.isCountdownMode && manager.targetDuration > ZERO) {
-        (manager.remainingDuration.inWholeMilliseconds.toFloat() / manager.targetDuration.inWholeMilliseconds.toFloat()).coerceIn(0f, 1f)
-    } else {
-        1f
-    }
-
-    val animatedProgress by animateFloatAsState(
-        targetValue = exactProgress,
-        animationSpec = if (manager.isRunning) tween(0) else tween(400, easing = FastOutSlowInEasing),
-        label = "progressAnimation"
-    )
-
     val isRunning = manager.isRunning
     val hasProgress = manager.remainingDuration < manager.targetDuration && manager.remainingDuration > ZERO
     val isInitial = !isRunning && !hasProgress
@@ -108,7 +96,7 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .windowInsetsPadding(WindowInsets.statusBars)
-                    .padding(top = 8.dp, bottom = 8.dp),
+                    .padding(top = 20.dp, bottom = 12.dp, start = 8.dp, end = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.End
             ) {
@@ -127,85 +115,12 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
 
             Spacer(modifier = Modifier.weight(1f))
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.85f)
-                    .aspectRatio(1f)
-                    .padding(8.dp)
-                    .clip(CircleShape)
-                    .clickable {
-                        if (isInitial) {
-                            manager.isRunning = true
-                            customToastMessage = "Sesja rozpoczęta"
-                        } else {
-                            manager.isRunning = !manager.isRunning
-                        }
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                val trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                val primaryColor = MaterialTheme.colorScheme.primary
-                val secondaryColor = MaterialTheme.colorScheme.secondary
-
-                val gradientBrush = remember(primaryColor, secondaryColor) {
-                    Brush.linearGradient(colors = listOf(primaryColor, secondaryColor))
-                }
-
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val strokeWidth = 12.dp.toPx()
-                    val radius = (size.minDimension - strokeWidth) / 2f
-                    val diameter = radius * 2f
-
-                    drawCircle(
-                        color = trackColor,
-                        radius = radius,
-                        style = Stroke(width = strokeWidth)
-                    )
-
-                    drawArc(
-                        brush = gradientBrush,
-                        startAngle = -90f,
-                        sweepAngle = 360f * animatedProgress,
-                        useCenter = false,
-                        topLeft = Offset(strokeWidth / 2f, strokeWidth / 2f),
-                        size = Size(diameter, diameter),
-                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                    )
-                }
-
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = formatDuration(manager.remainingDuration),
-                        fontSize = 100.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        letterSpacing = 1.sp,
-                        textAlign = TextAlign.Center
-                    )
-
-                    AnimatedContent(
-                        targetState = when {
-                            isInitial -> "Dotknij, aby rozpocząć"
-                            isRunning -> "Dotknij, aby wstrzymać"
-                            else -> "Dotknij, aby wznowić"
-                        },
-                        transitionSpec = {
-                            fadeIn(tween(300)) togetherWith fadeOut(tween(300))
-                        },
-                        label = "TimerActionText",
-                        modifier = Modifier.offset(y = 45.dp)
-                    ) { text ->
-                        Text(
-                            text = text,
-                            fontSize = 22.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                            fontWeight = FontWeight.Medium,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+            TimerClockView(manager = manager) {
+                if (isInitial) {
+                    manager.isRunning = true
+                    customToastMessage = "Sesja rozpoczęta"
+                } else {
+                    manager.isRunning = !manager.isRunning
                 }
             }
 
@@ -229,7 +144,7 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Nie przeszkadzać",
-                        fontSize = 18.sp,
+                        fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Medium
                     )
@@ -274,8 +189,8 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                 Surface(
                     onClick = {
                         if (!isInitial) {
-                            manager.isRunning = false // Wstrzymanie timera na czas pytania
-                            showStopDialog = true // Pokazanie okienka
+                            manager.isRunning = false
+                            showStopDialog = true
                         }
                     },
                     shape = CircleShape,
@@ -317,13 +232,12 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                     text = customToastMessage ?: "",
                     color = MaterialTheme.colorScheme.inverseOnSurface,
                     modifier = Modifier.padding(horizontal = 26.dp, vertical = 14.dp),
-                    fontSize = 20.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
             }
         }
 
-        // --- OKIENKO POTWIERDZENIA ZAKOŃCZENIA (NOWOCZESNY STYL) ---
         if (showStopDialog) {
             Dialog(onDismissRequest = { showStopDialog = false }) {
                 Surface(
@@ -354,14 +268,17 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            TextButton(
+                            Button(
                                 onClick = { showStopDialog = false },
-                                modifier = Modifier.weight(1f).height(48.dp)
+                                modifier = Modifier.weight(1f).height(48.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             ) {
                                 Text(
                                     text = "Anuluj",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    style = MaterialTheme.typography.titleMedium
                                 )
                             }
                             Button(
@@ -384,6 +301,100 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimerClockView(manager: TimerManager, onClick: () -> Unit) {
+    val exactProgress = if (manager.isCountdownMode && manager.targetDuration > ZERO) {
+        (manager.remainingDuration.inWholeMilliseconds.toFloat() / manager.targetDuration.inWholeMilliseconds.toFloat()).coerceIn(0f, 1f)
+    } else {
+        1f
+    }
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = exactProgress,
+        animationSpec = if (manager.isRunning) tween(0) else tween(400, easing = FastOutSlowInEasing),
+        label = "progressAnimation"
+    )
+
+    val isRunning = manager.isRunning
+    val hasProgress = manager.remainingDuration < manager.targetDuration && manager.remainingDuration > ZERO
+    val isInitial = !isRunning && !hasProgress
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(0.85f)
+            .aspectRatio(1f)
+            .padding(8.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        val trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+        val primaryColor = MaterialTheme.colorScheme.primary
+        val secondaryColor = MaterialTheme.colorScheme.secondary
+
+        val gradientBrush = remember(primaryColor, secondaryColor) {
+            Brush.linearGradient(colors = listOf(primaryColor, secondaryColor))
+        }
+
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val strokeWidth = 12.dp.toPx()
+            val radius = (size.minDimension - strokeWidth) / 2f
+            val diameter = radius * 2f
+
+            drawCircle(
+                color = trackColor,
+                radius = radius,
+                style = Stroke(width = strokeWidth)
+            )
+
+            drawArc(
+                brush = gradientBrush,
+                startAngle = -90f,
+                sweepAngle = 360f * animatedProgress,
+                useCenter = false,
+                topLeft = Offset(strokeWidth / 2f, strokeWidth / 2f),
+                size = Size(diameter, diameter),
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+            )
+        }
+
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = formatDuration(manager.remainingDuration),
+                fontSize = 60.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                letterSpacing = 1.sp,
+                textAlign = TextAlign.Center
+            )
+
+            AnimatedContent(
+                targetState = when {
+                    isInitial -> "Dotknij, aby rozpocząć"
+                    isRunning -> "Dotknij, aby wstrzymać"
+                    else -> "Dotknij, aby wznowić"
+                },
+                transitionSpec = {
+                    fadeIn(tween(300)) togetherWith fadeOut(tween(300))
+                },
+                label = "TimerActionText",
+                modifier = Modifier.offset(y = 45.dp)
+            ) { text ->
+                Text(
+                    text = text,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }

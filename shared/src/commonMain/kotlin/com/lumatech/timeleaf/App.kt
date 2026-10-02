@@ -8,6 +8,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,9 +30,14 @@ import timeleaf.shared.generated.resources.Res
 import timeleaf.shared.generated.resources.baseline_bolt_24
 import timeleaf.shared.generated.resources.baseline_person_24
 import timeleaf.shared.generated.resources.baseline_timer_24
-import timeleaf.shared.generated.resources.Dongle_Bold
-import timeleaf.shared.generated.resources.Dongle_Light
-import timeleaf.shared.generated.resources.Dongle_Regular
+import timeleaf.shared.generated.resources.Nunito_Black
+import timeleaf.shared.generated.resources.Nunito_Bold
+import timeleaf.shared.generated.resources.Nunito_ExtraBold
+import timeleaf.shared.generated.resources.Nunito_ExtraLight
+import timeleaf.shared.generated.resources.Nunito_Light
+import timeleaf.shared.generated.resources.Nunito_Medium
+import timeleaf.shared.generated.resources.Nunito_Regular
+import timeleaf.shared.generated.resources.Nunito_SemiBold
 
 private val ModernLightColorScheme = lightColorScheme(
     primary = Color(0xFF10B981),
@@ -77,37 +84,53 @@ fun App() {
     val isDark = appForceDarkMode ?: systemDark
     val colorScheme = if (isDark) ModernDarkColorScheme else ModernLightColorScheme
 
-    val dongleFontFamily = FontFamily(
-        Font(Res.font.Dongle_Light, FontWeight.Light),
-        Font(Res.font.Dongle_Regular, FontWeight.Normal),
-        Font(Res.font.Dongle_Regular, FontWeight.Medium),
-        Font(Res.font.Dongle_Bold, FontWeight.Bold),
-        Font(Res.font.Dongle_Bold, FontWeight.SemiBold),
-        Font(Res.font.Dongle_Bold, FontWeight.Black)
+    val nunitoFontFamily = FontFamily(
+        Font(Res.font.Nunito_ExtraLight, FontWeight.ExtraLight),
+        Font(Res.font.Nunito_Light, FontWeight.Light),
+        Font(Res.font.Nunito_Regular, FontWeight.Normal),
+        Font(Res.font.Nunito_Medium, FontWeight.Medium),
+        Font(Res.font.Nunito_SemiBold, FontWeight.SemiBold),
+        Font(Res.font.Nunito_Bold, FontWeight.Bold),
+        Font(Res.font.Nunito_ExtraBold, FontWeight.ExtraBold),
+        Font(Res.font.Nunito_Black, FontWeight.Black)
     )
 
-    val dongleTypography = Typography(
-        displayLarge = TextStyle(fontFamily = dongleFontFamily, fontSize = 110.sp, fontWeight = FontWeight.Bold),
-        displayMedium = TextStyle(fontFamily = dongleFontFamily, fontSize = 88.sp, fontWeight = FontWeight.Bold),
-        displaySmall = TextStyle(fontFamily = dongleFontFamily, fontSize = 68.sp, fontWeight = FontWeight.Bold),
-        headlineLarge = TextStyle(fontFamily = dongleFontFamily, fontSize = 52.sp, fontWeight = FontWeight.Bold),
-        headlineMedium = TextStyle(fontFamily = dongleFontFamily, fontSize = 44.sp, fontWeight = FontWeight.Bold),
-        headlineSmall = TextStyle(fontFamily = dongleFontFamily, fontSize = 36.sp, fontWeight = FontWeight.Bold),
-        titleLarge = TextStyle(fontFamily = dongleFontFamily, fontSize = 32.sp, fontWeight = FontWeight.Bold),
-        titleMedium = TextStyle(fontFamily = dongleFontFamily, fontSize = 26.sp, fontWeight = FontWeight.SemiBold),
-        titleSmall = TextStyle(fontFamily = dongleFontFamily, fontSize = 22.sp, fontWeight = FontWeight.Medium),
-        bodyLarge = TextStyle(fontFamily = dongleFontFamily, fontSize = 24.sp, fontWeight = FontWeight.Normal),
-        bodyMedium = TextStyle(fontFamily = dongleFontFamily, fontSize = 22.sp, fontWeight = FontWeight.Normal),
-        bodySmall = TextStyle(fontFamily = dongleFontFamily, fontSize = 18.sp, fontWeight = FontWeight.Normal),
-        labelLarge = TextStyle(fontFamily = dongleFontFamily, fontSize = 22.sp, fontWeight = FontWeight.Medium),
-        labelMedium = TextStyle(fontFamily = dongleFontFamily, fontSize = 20.sp, fontWeight = FontWeight.Medium),
-        labelSmall = TextStyle(fontFamily = dongleFontFamily, fontSize = 18.sp, fontWeight = FontWeight.Medium)
+    val nunitoTypography = Typography(
+        displayLarge = TextStyle(fontFamily = nunitoFontFamily, fontSize = 57.sp, fontWeight = FontWeight.Bold),
+        displayMedium = TextStyle(fontFamily = nunitoFontFamily, fontSize = 45.sp, fontWeight = FontWeight.Bold),
+        displaySmall = TextStyle(fontFamily = nunitoFontFamily, fontSize = 36.sp, fontWeight = FontWeight.Bold),
+        headlineLarge = TextStyle(fontFamily = nunitoFontFamily, fontSize = 32.sp, fontWeight = FontWeight.Bold),
+        headlineMedium = TextStyle(fontFamily = nunitoFontFamily, fontSize = 28.sp, fontWeight = FontWeight.Bold),
+        headlineSmall = TextStyle(fontFamily = nunitoFontFamily, fontSize = 24.sp, fontWeight = FontWeight.Bold),
+        titleLarge = TextStyle(fontFamily = nunitoFontFamily, fontSize = 22.sp, fontWeight = FontWeight.Bold),
+        titleMedium = TextStyle(fontFamily = nunitoFontFamily, fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
+        titleSmall = TextStyle(fontFamily = nunitoFontFamily, fontSize = 14.sp, fontWeight = FontWeight.Medium),
+        bodyLarge = TextStyle(fontFamily = nunitoFontFamily, fontSize = 16.sp, fontWeight = FontWeight.Normal),
+        bodyMedium = TextStyle(fontFamily = nunitoFontFamily, fontSize = 14.sp, fontWeight = FontWeight.Normal),
+        bodySmall = TextStyle(fontFamily = nunitoFontFamily, fontSize = 12.sp, fontWeight = FontWeight.Normal),
+        labelLarge = TextStyle(fontFamily = nunitoFontFamily, fontSize = 14.sp, fontWeight = FontWeight.Medium),
+        labelMedium = TextStyle(fontFamily = nunitoFontFamily, fontSize = 12.sp, fontWeight = FontWeight.Medium),
+        labelSmall = TextStyle(fontFamily = nunitoFontFamily, fontSize = 11.sp, fontWeight = FontWeight.Medium)
     )
 
-    MaterialTheme(colorScheme = colorScheme, typography = dongleTypography) {
+    MaterialTheme(colorScheme = colorScheme, typography = nunitoTypography) {
         var selectedTab by remember { mutableStateOf(1) }
         var showSettings by remember { mutableStateOf(false) }
         var lastBackMark by remember { mutableStateOf<TimeSource.Monotonic.ValueTimeMark?>(null) }
+
+        val pagerState = rememberPagerState(initialPage = selectedTab) { 3 }
+
+        LaunchedEffect(selectedTab) {
+            if (pagerState.currentPage != selectedTab) {
+                pagerState.animateScrollToPage(selectedTab)
+            }
+        }
+
+        LaunchedEffect(pagerState.currentPage) {
+            if (selectedTab != pagerState.currentPage) {
+                selectedTab = pagerState.currentPage
+            }
+        }
 
         if (showSettings) {
             LocalBackHandler { showSettings = false }
@@ -137,17 +160,11 @@ fun App() {
                     .navigationBarsPadding()
                     .padding(bottom = 84.dp)
             ) {
-                AnimatedContent(
-                    targetState = selectedTab,
-                    transitionSpec = {
-                        fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
-                                slideInHorizontally { if (targetState > initialState) it / 2 else -it / 2 } togetherWith
-                                fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
-                                slideOutHorizontally { if (targetState > initialState) -it / 2 else it / 2 }
-                    },
-                    label = "TabTransition"
-                ) { tab ->
-                    when (tab) {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+                    when (page) {
                         0 -> TimeTilesScreen(onTileSelected = { selectedTab = 1 })
                         1 -> TimerScreen(onOpenSettings = { showSettings = true })
                         2 -> ProfileScreen()

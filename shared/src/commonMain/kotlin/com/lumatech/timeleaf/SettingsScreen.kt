@@ -48,7 +48,7 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
             modifier = Modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
@@ -67,7 +67,7 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
 
             Text(
                 text = LocalizedStrings.settingsTitle,
-                fontSize = 30.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -140,14 +140,23 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                                                 languageExpanded = false
                                             }
                                             .padding(horizontal = 24.dp, vertical = 20.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Text(
                                             text = langFullName,
-                                            fontSize = 20.sp,
+                                            fontSize = 16.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
+                                        if (isSelected) {
+                                            Text(
+                                                text = "✓",
+                                                fontSize = 18.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -242,24 +251,24 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
 
                     Text(
                         text = "TimeLeaf",
-                        fontSize = 30.sp,
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Text(
                         text = LocalizedStrings.aboutDialogVersion,
-                        fontSize = 18.sp,
+                        fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 6.dp, bottom = 24.dp)
                     )
 
                     Text(
                         text = LocalizedStrings.aboutDialogDesc,
-                        fontSize = 18.sp,
+                        fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
-                        lineHeight = 26.sp
+                        lineHeight = 22.sp
                     )
 
                     Spacer(modifier = Modifier.height(36.dp))
@@ -275,7 +284,7 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                     ) {
                         Text(
                             text = LocalizedStrings.btnClose,
-                            fontSize = 18.sp,
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -289,7 +298,7 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
 private fun SettingsSectionHeader(title: String) {
     Text(
         text = title,
-        fontSize = 20.sp,
+        fontSize = 14.sp,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
         modifier = Modifier.padding(start = 12.dp, bottom = 6.dp)
@@ -330,7 +339,7 @@ private fun SettingsSwitchItem(
                 Spacer(modifier = Modifier.width(20.dp))
                 Text(
                     text = title,
-                    fontSize = 22.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -392,7 +401,7 @@ private fun SettingsDropdownItem(
                 Spacer(modifier = Modifier.width(20.dp))
                 Text(
                     text = title,
-                    fontSize = 22.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -401,14 +410,14 @@ private fun SettingsDropdownItem(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = selectedText,
-                    fontSize = 20.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = if (isExpanded) "▲" else "▼",
-                    fontSize = 16.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
@@ -452,7 +461,7 @@ private fun SettingsActionItem(
                 Spacer(modifier = Modifier.width(20.dp))
                 Text(
                     text = title,
-                    fontSize = 22.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -460,7 +469,7 @@ private fun SettingsActionItem(
 
             Text(
                 text = trailingText,
-                fontSize = 20.sp,
+                fontSize = if (trailingText == "↗") 22.sp else 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             )

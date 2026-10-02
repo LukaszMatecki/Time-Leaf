@@ -60,7 +60,7 @@ private fun ProfileMainView(onOpenAchievements: () -> Unit) {
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier
                 .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 8.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 12.dp)
         )
 
         LazyColumn(

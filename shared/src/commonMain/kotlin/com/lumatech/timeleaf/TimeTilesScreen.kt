@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -50,25 +51,25 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
             TimeTileInfo(
                 title = LocalizedStrings.presetQuickTaskTitle,
                 durationMinutes = 5,
-                description = LocalizedStrings.presetQuickTaskDesc,
+                description = "",
                 iconContent = { tint -> BoltVectorIcon(tint = tint) }
             ),
             TimeTileInfo(
                 title = LocalizedStrings.presetPomodoroTitle,
                 durationMinutes = 25,
-                description = LocalizedStrings.presetPomodoroDesc,
+                description = "",
                 iconContent = { tint -> WorkVectorIcon(tint = tint) }
             ),
             TimeTileInfo(
                 title = LocalizedStrings.presetDeepSessionTitle,
                 durationMinutes = 45,
-                description = LocalizedStrings.presetDeepSessionDesc,
+                description = "",
                 iconContent = { tint -> StarVectorIcon(tint = tint) }
             ),
             TimeTileInfo(
                 title = LocalizedStrings.presetHourTitle,
                 durationMinutes = 60,
-                description = LocalizedStrings.presetHourDesc,
+                description = "",
                 iconContent = { tint -> TimerTileVectorIcon(tint = tint) }
             )
         )
@@ -82,11 +83,12 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
         Column(
             modifier = Modifier
                 .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 8.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 12.dp)
         ) {
             Text(
                 text = LocalizedStrings.tilesHeaderTitle,
                 style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
@@ -300,24 +302,21 @@ private fun BentoTileCard(
                 Text(
                     text = "${tile.durationMinutes} min",
                     style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            Column {
-                Text(
-                    text = tile.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1
-                )
-                Text(
-                    text = tile.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                    maxLines = 1
-                )
-            }
+            Text(
+                text = tile.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+
+                modifier = Modifier
+                    .padding(bottom = 5.dp)
+            )
         }
     }
 }

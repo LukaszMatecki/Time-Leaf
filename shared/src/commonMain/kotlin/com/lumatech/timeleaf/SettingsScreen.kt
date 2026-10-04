@@ -13,13 +13,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
@@ -34,6 +34,7 @@ import timeleaf.shared.generated.resources.baseline_notifications_off_24
 import timeleaf.shared.generated.resources.baseline_open_in_new_24
 import timeleaf.shared.generated.resources.baseline_person_24
 import timeleaf.shared.generated.resources.baseline_star_24
+import timeleaf.shared.generated.resources.baseline_timer_24
 import timeleaf.shared.generated.resources.baseline_translate_24
 import timeleaf.shared.generated.resources.baseline_volume_up_24
 
@@ -44,8 +45,12 @@ enum class SettingsSubScreen {
 @Composable
 @Preview
 fun SettingsScreen(onBackClick: () -> Unit = {}) {
-    var notificationsEnabled by remember { mutableStateOf(true) }
-    var soundEnabled by remember { mutableStateOf(true) }
+    var notificationsEnabled by remember { mutableStateOf(UserStats.pushNotifications) }
+    var soundEnabled by remember { mutableStateOf(UserStats.soundEnabled) }
+    var vibrationEnabled by remember { mutableStateOf(UserStats.vibrationEnabled) }
+    var autoBreak by remember { mutableStateOf(UserStats.autoBreak) }
+    var keepScreenAwake by remember { mutableStateOf(UserStats.keepScreenAwake) }
+
     var languageExpanded by remember { mutableStateOf(false) }
     var themeExpanded by remember { mutableStateOf(false) }
     var currentSubScreen by remember { mutableStateOf<SettingsSubScreen?>(null) }
@@ -189,6 +194,11 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                                                                     )
                                                                     .clickable {
                                                                         currentThemeMode = mode
+                                                                        UserStats.updateSettings(
+                                                                            currentAppLanguage, mode,
+                                                                            notificationsEnabled, soundEnabled,
+                                                                            vibrationEnabled, autoBreak, keepScreenAwake
+                                                                        )
                                                                         themeExpanded = false
                                                                     }
                                                                     .padding(horizontal = 20.dp, vertical = 16.dp),
@@ -220,13 +230,12 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                                     // Language Dropdown Item
                                     item {
                                         Column(modifier = Modifier.fillMaxWidth()) {
-                                            val currentShortLang = if (currentAppLanguage.name.contains("POL", ignoreCase = true) ||
-                                                currentAppLanguage.name.contains("PL", ignoreCase = true)) "PL" else "ENG"
+                                            val currentLangDisplayName = currentAppLanguage.displayName
 
                                             SettingsDropdownItem(
                                                 iconRes = Res.drawable.baseline_translate_24,
                                                 title = LocalizedStrings.settingsLanguageLabel,
-                                                selectedText = currentShortLang,
+                                                selectedText = currentLangDisplayName,
                                                 onClick = { languageExpanded = !languageExpanded },
                                                 isExpanded = languageExpanded
                                             )
@@ -244,12 +253,6 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                                                 ) {
                                                     Column {
                                                         AppLanguage.entries.forEach { lang ->
-                                                            val langFullName = when {
-                                                                lang.name.contains("POL", ignoreCase = true) || lang.name.contains("PL", ignoreCase = true) -> "POLSKI"
-                                                                lang.name.contains("ENG", ignoreCase = true) -> "ENGLISH"
-                                                                else -> lang.displayName.uppercase()
-                                                            }
-
                                                             val isSelected = lang == currentAppLanguage
 
                                                             Row(
@@ -261,6 +264,11 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                                                                     )
                                                                     .clickable {
                                                                         currentAppLanguage = lang
+                                                                        UserStats.updateSettings(
+                                                                            lang, currentThemeMode,
+                                                                            notificationsEnabled, soundEnabled,
+                                                                            vibrationEnabled, autoBreak, keepScreenAwake
+                                                                        )
                                                                         languageExpanded = false
                                                                     }
                                                                     .padding(horizontal = 20.dp, vertical = 16.dp),
@@ -268,7 +276,7 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                                                                 horizontalArrangement = Arrangement.SpaceBetween
                                                             ) {
                                                                 Text(
-                                                                    text = langFullName,
+                                                                    text = lang.displayName,
                                                                     fontSize = 14.sp,
                                                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                                                     color = MaterialTheme.colorScheme.onSurface
@@ -299,7 +307,14 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                                             iconRes = Res.drawable.baseline_volume_up_24,
                                             title = LocalizedStrings.settingsSoundTitle,
                                             checked = soundEnabled,
-                                            onCheckedChange = { soundEnabled = it }
+                                            onCheckedChange = {
+                                                soundEnabled = it
+                                                UserStats.updateSettings(
+                                                    currentAppLanguage, currentThemeMode,
+                                                    notificationsEnabled, soundEnabled,
+                                                    vibrationEnabled, autoBreak, keepScreenAwake
+                                                )
+                                            }
                                         )
                                     }
 
@@ -308,7 +323,51 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                                             iconRes = Res.drawable.baseline_notifications_off_24,
                                             title = LocalizedStrings.settingsPushTitle,
                                             checked = notificationsEnabled,
-                                            onCheckedChange = { notificationsEnabled = it }
+                                            onCheckedChange = {
+                                                notificationsEnabled = it
+                                                UserStats.updateSettings(
+                                                    currentAppLanguage, currentThemeMode,
+                                                    notificationsEnabled, soundEnabled,
+                                                    vibrationEnabled, autoBreak, keepScreenAwake
+                                                )
+                                            }
+                                        )
+                                    }
+
+                                    item {
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        SettingsSectionHeader(LocalizedStrings.settingsSectionBehavior)
+                                    }
+
+                                    item {
+                                        SettingsSwitchItem(
+                                            iconRes = Res.drawable.baseline_timer_24,
+                                            title = LocalizedStrings.settingsAutoBreakTitle,
+                                            checked = autoBreak,
+                                            onCheckedChange = {
+                                                autoBreak = it
+                                                UserStats.updateSettings(
+                                                    currentAppLanguage, currentThemeMode,
+                                                    notificationsEnabled, soundEnabled,
+                                                    vibrationEnabled, autoBreak, keepScreenAwake
+                                                )
+                                            }
+                                        )
+                                    }
+
+                                    item {
+                                        SettingsSwitchItem(
+                                            iconRes = Res.drawable.baseline_bedtime_24,
+                                            title = LocalizedStrings.settingsKeepScreenTitle,
+                                            checked = keepScreenAwake,
+                                            onCheckedChange = {
+                                                keepScreenAwake = it
+                                                UserStats.updateSettings(
+                                                    currentAppLanguage, currentThemeMode,
+                                                    notificationsEnabled, soundEnabled,
+                                                    vibrationEnabled, autoBreak, keepScreenAwake
+                                                )
+                                            }
                                         )
                                     }
 
@@ -336,7 +395,10 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                                         SettingsActionItem(
                                             iconRes = Res.drawable.baseline_group_24,
                                             title = LocalizedStrings.settingsAuthorsTitle,
-                                            onClick = { currentSubScreen = SettingsSubScreen.AUTHORS }
+                                            onClick = {
+                                                UserStats.recordVisitAuthors()
+                                                currentSubScreen = SettingsSubScreen.AUTHORS
+                                            }
                                         )
                                     }
 
@@ -526,6 +588,7 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                         Button(
                             onClick = {
                                 sharedCustomTiles.clear()
+                                UserStats.resetAll()
                                 showDeleteDialog = false
                                 toastMessage = LocalizedStrings.snackDataCleared
                             },

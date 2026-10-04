@@ -31,6 +31,10 @@ data class AuthorInfo(
 
 @Composable
 fun AuthorsScreen(onBackClick: () -> Unit) {
+    LaunchedEffect(Unit) {
+        UserStats.recordVisitAuthors()
+    }
+
     var selectedAuthor by remember { mutableStateOf<AuthorInfo?>(null) }
     val uriHandler = LocalUriHandler.current
 
@@ -39,7 +43,7 @@ fun AuthorsScreen(onBackClick: () -> Unit) {
             name = LocalizedStrings.authorMainName,
             role = LocalizedStrings.authorRole,
             bio = LocalizedStrings.authorBio,
-            linkedinUrl = "https://www.linkedin.com",
+            linkedinUrl = "www.linkedin.com/in/lukasz-matecki",
             emails = listOf(LocalizedStrings.authorEmail1, LocalizedStrings.authorEmail2)
         )
     )

@@ -1,9 +1,6 @@
 package com.lumatech.timeleaf
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -11,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +20,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import kotlinx.coroutines.delay
 import kotlin.time.TimeSource
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.Font
@@ -124,6 +124,14 @@ fun App() {
 
         val pagerState = rememberPagerState(initialPage = selectedTab) { 3 }
 
+        val unlockedAch = UserStats.latestUnlockedPopup
+        LaunchedEffect(unlockedAch) {
+            if (unlockedAch != null) {
+                delay(3500L)
+                UserStats.latestUnlockedPopup = null
+            }
+        }
+
         LaunchedEffect(selectedTab) {
             if (pagerState.currentPage != selectedTab) {
                 pagerState.animateScrollToPage(selectedTab)
@@ -158,11 +166,61 @@ fun App() {
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
+            // Achievement Unlocked Popup Banner
+            AnimatedVisibility(
+                visible = unlockedAch != null,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                modifier = Modifier
+                    .zIndex(20f)
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(top = 16.dp)
+                    .padding(horizontal = 24.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shadowElevation = 8.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(text = "🏆", fontSize = 18.sp)
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (currentAppLanguage == AppLanguage.PL) "Odblokowano osiągnięcie!" else "Achievement Unlocked!",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                            )
+                            Text(
+                                text = unlockedAch ?: "",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .navigationBarsPadding()
-                    .padding(bottom = 84.dp)
+                    .padding(bottom = 76.dp)
             ) {
                 HorizontalPager(
                     state = pagerState,
@@ -182,40 +240,39 @@ fun App() {
                 exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
-                Box(
-                    modifier = Modifier
-                        .navigationBarsPadding()
-                        .padding(bottom = 30.dp),
-                    contentAlignment = Alignment.Center
+                Surface(
+                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 12.dp,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surface,
-                        shadowElevation = 4.dp,
-                        modifier = Modifier.height(52.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .padding(horizontal = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            ExpandingNavItem(
+                            BottomNavItem(
                                 iconRes = Res.drawable.baseline_bolt_24,
                                 label = LocalizedStrings.navTiles,
                                 isSelected = selectedTab == 0,
                                 onClick = { selectedTab = 0 }
                             )
 
-                            ExpandingNavItem(
+                            BottomNavItem(
                                 iconRes = Res.drawable.baseline_timer_24,
                                 label = LocalizedStrings.navTimer,
                                 isSelected = selectedTab == 1,
                                 onClick = { selectedTab = 1 }
                             )
 
-                            ExpandingNavItem(
+                            BottomNavItem(
                                 iconRes = Res.drawable.baseline_person_24,
                                 label = LocalizedStrings.navProfile,
                                 isSelected = selectedTab == 2,
@@ -241,7 +298,7 @@ fun App() {
 }
 
 @Composable
-private fun ExpandingNavItem(
+private fun BottomNavItem(
     iconRes: DrawableResource,
     label: String,
     isSelected: Boolean,
@@ -251,24 +308,16 @@ private fun ExpandingNavItem(
     val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
     val activeBg = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
 
-    val targetWidth by animateDpAsState(
-        targetValue = if (isSelected) 108.dp else 46.dp,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy),
-        label = "tabWidth"
-    )
-
     Surface(
         onClick = onClick,
-        shape = CircleShape,
+        shape = RoundedCornerShape(16.dp),
         color = if (isSelected) activeBg else Color.Transparent,
-        modifier = Modifier
-            .width(targetWidth)
-            .height(42.dp)
+        modifier = Modifier.height(42.dp)
     ) {
         Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = if (isSelected) 12.dp else 0.dp),
+                .fillMaxHeight()
+                .padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
@@ -278,23 +327,14 @@ private fun ExpandingNavItem(
                 tint = if (isSelected) activeColor else inactiveColor,
                 modifier = Modifier.size(20.dp)
             )
-
-            AnimatedVisibility(
-                visible = isSelected,
-                enter = fadeIn(tween(200)) + expandHorizontally(expandFrom = Alignment.Start),
-                exit = fadeOut(tween(200)) + shrinkHorizontally(shrinkTowards = Alignment.Start)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        maxLines = 1
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
+            )
         }
     }
 }

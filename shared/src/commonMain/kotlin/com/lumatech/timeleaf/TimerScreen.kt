@@ -74,7 +74,9 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                         if (newRemaining <= ZERO) {
                             manager.remainingDuration = ZERO
                             manager.isRunning = false
-                            customToastMessage = "Sesja zakończona"
+                            val minutesSpent = manager.targetDuration.inWholeMinutes.toInt()
+                            UserStats.recordCompletedSession(minutesSpent)
+                            customToastMessage = "Sesja zakończona! Statystyki zaktualizowane 🎉"
                         } else {
                             manager.remainingDuration = newRemaining
                         }
@@ -137,6 +139,7 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
             TimerClockView(manager = manager) {
                 if (isInitial) {
                     manager.isRunning = true
+                    UserStats.recordStartTimer()
                     customToastMessage = "Sesja rozpoczęta"
                 } else {
                     if (!showControls) {

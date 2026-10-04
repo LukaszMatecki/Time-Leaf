@@ -204,60 +204,60 @@ private fun ContactAndBugSection(onEmailClick: () -> Unit, onReportClick: () -> 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 80.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
             Surface(
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
+                        .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Surface(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(64.dp)
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 painter = painterResource(Res.drawable.baseline_mail_24),
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = LocalizedStrings.contactSupportHeader,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
-                        text = LocalizedStrings.contactSupportDesc,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 22.sp
+                        text = LocalizedStrings.contactSupportHeader,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = LocalizedStrings.contactSupportDesc,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 18.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
                         onClick = onEmailClick,
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                        shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
@@ -265,7 +265,7 @@ private fun ContactAndBugSection(onEmailClick: () -> Unit, onReportClick: () -> 
                     ) {
                         Text(
                             text = LocalizedStrings.contactSupportEmailBtn,
-                            style = MaterialTheme.typography.titleSmall,
+                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -275,56 +275,56 @@ private fun ContactAndBugSection(onEmailClick: () -> Unit, onReportClick: () -> 
 
         item {
             Surface(
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
+                        .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Surface(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.errorContainer,
-                        modifier = Modifier.size(64.dp)
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 painter = painterResource(Res.drawable.baseline_help_24),
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = LocalizedStrings.reportBugHeader,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
-                        text = LocalizedStrings.reportBugDesc,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 22.sp
+                        text = LocalizedStrings.reportBugHeader,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = LocalizedStrings.reportBugDesc,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 18.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
                         onClick = onReportClick,
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                        shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.error,
                             contentColor = MaterialTheme.colorScheme.onError
@@ -332,7 +332,7 @@ private fun ContactAndBugSection(onEmailClick: () -> Unit, onReportClick: () -> 
                     ) {
                         Text(
                             text = LocalizedStrings.reportBugEmailBtn,
-                            style = MaterialTheme.typography.titleSmall,
+                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold
                         )
                     }

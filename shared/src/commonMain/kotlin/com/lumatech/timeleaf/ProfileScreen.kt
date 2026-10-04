@@ -23,7 +23,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -256,7 +255,7 @@ private fun ProfileMainView(
                             modifier = cardModifier,
                             onClick = {
                                 dialogTitle = LocalizedStrings.profileTimeTitle
-                                dialogDesc = "Twój łączny czas skupienia to ${focusMinutes} minut."
+                                dialogDesc = "Twój łączny czas skupienia to $focusMinutes minut."
                             }
                         )
                     }

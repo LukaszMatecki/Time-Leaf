@@ -4,9 +4,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
-enum class AppLanguage(val code: String, val displayName: String, val flag: String) {
-    PL("pl", "Polski", "🇵🇱"),
-    EN("en", "English", "🇬🇧")
+enum class AppLanguage(val code: String, val displayName: String) {
+    PL("pl", "Polski"),
+    EN("en", "English")
 }
 
 var currentAppLanguage by mutableStateOf(AppLanguage.PL)
@@ -35,18 +35,7 @@ object LocalizedStrings {
     val presetPomodoroTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Pomodoro" else "Pomodoro"
     val presetDeepSessionTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Głęboka sesja" else "Deep session"
     val presetHourTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Godzina" else "One Hour"
-    val profileTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Profil" else "Profile"
-    val profileGreeting: String get() = if (currentAppLanguage == AppLanguage.PL) "Witaj w profilu!" else "Welcome to Profile!"
-    val profileUserLevelPill: String get() = if (currentAppLanguage == AppLanguage.PL) "Poziom 3" else "Level 3"
-    val profileUserName: String get() = if (currentAppLanguage == AppLanguage.PL) "Mistrz Skupienia" else "Focus Master"
-    val profileUserLevel: String get() = if (currentAppLanguage == AppLanguage.PL) "Poziom 3" else "Level 3"
-    val profileCompletedSessions: String get() = if (currentAppLanguage == AppLanguage.PL) "Ukończone sesje" else "Completed sessions"
-    val profileFocusTime: String get() = if (currentAppLanguage == AppLanguage.PL) "Czas skupienia" else "Focus time"
-    val profileAchievementsTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Osiągnięcia" else "Achievements"
-    val profileAchievementsSubtitle: String get() = if (currentAppLanguage == AppLanguage.PL) "odblokowane" else "unlocked"
     val profileAboutTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "O aplikacji TimeLeaf" else "About TimeLeaf"
-    val achievementsHeaderTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Osiągnięcia" else "Achievements"
-    val achievementsHeaderSub: String get() = if (currentAppLanguage == AppLanguage.PL) "Zdobądź odznaki za konsekwencję w nauce i pracy" else "Earn badges for consistent focus sessions"
     val ach1Title: String get() = if (currentAppLanguage == AppLanguage.PL) "Pierwszy krok" else "First Step"
     val ach1Desc: String get() = if (currentAppLanguage == AppLanguage.PL) "Włącz timer po raz pierwszy" else "Start the timer for the first time"
     val ach2Title: String get() = if (currentAppLanguage == AppLanguage.PL) "Twórca sesji" else "Session Creator"
@@ -61,8 +50,6 @@ object LocalizedStrings {
     val ach6Desc: String get() = if (currentAppLanguage == AppLanguage.PL) "Ukończ sesję po godzinie 22:00" else "Complete a session after 10 PM"
     val ach7Title: String get() = if (currentAppLanguage == AppLanguage.PL) "Mistrz Flow" else "Flow Master"
     val ach7Desc: String get() = if (currentAppLanguage == AppLanguage.PL) "Zrealizuj 3 sesje w jeden dzień" else "Complete 3 sessions in one day"
-    val achievementUnlocked: String get() = if (currentAppLanguage == AppLanguage.PL) "Odblokowane" else "Unlocked"
-    val achievementLocked: String get() = if (currentAppLanguage == AppLanguage.PL) "Zablokowane" else "Locked"
     val settingsTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Ustawienia" else "Settings"
     val settingsLanguageLabel: String get() = if (currentAppLanguage == AppLanguage.PL) "Język aplikacji" else "App language"
     val settingsThemeModeLabel: String get() = if (currentAppLanguage == AppLanguage.PL) "Tryb motywu" else "Theme mode"
@@ -127,7 +114,6 @@ object LocalizedStrings {
     val profileSessionsTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Ukończone sesje" else "Completed Sessions"
     val profileSessionsDesc: String get() = if (currentAppLanguage == AppLanguage.PL) "Liczba pomyślnie ukończonych sesji skupienia: " else "Number of successfully completed focus sessions: "
     val profileTimeTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Całkowity czas skupienia" else "Total Focus Time"
-    val profileTimeDesc: String get() = if (currentAppLanguage == AppLanguage.PL) "Łączny czas spędzony na głębokim skupieniu: " else "Total time spent in deep focus mode: "
     val profileChartTitle: String get() = if (currentAppLanguage == AppLanguage.PL) "Aktywność w tym tygodniu" else "Weekly Activity"
     val profileChartDesc: String get() = if (currentAppLanguage == AppLanguage.PL) "Wykres przedstawia Twoją aktywność w poszczególnych dniach tygodnia. Każda ukończona sesja zwiększa Twój wskaźnik." else "The chart shows your activity across days of the week. Every completed session increases your score."
     val snackPressAgainToExit: String get() = if (currentAppLanguage == AppLanguage.PL) "Naciśnij ponownie 'Wróć', aby wyjść z aplikacji" else "Press back again to exit"

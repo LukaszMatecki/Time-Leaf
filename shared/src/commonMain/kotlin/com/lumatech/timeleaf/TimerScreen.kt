@@ -19,7 +19,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +39,7 @@ import timeleaf.shared.generated.resources.baseline_settings_24
 import timeleaf.shared.generated.resources.baseline_stop_circle_24
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeSource
 
 @Composable
@@ -54,7 +54,7 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
     LaunchedEffect(manager.isRunning) {
         if (manager.isRunning) {
             showControls = true
-            delay(10000)
+            delay(10000.milliseconds)
             if (manager.isRunning) {
                 showControls = false
             }
@@ -92,7 +92,7 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
 
     LaunchedEffect(customToastMessage) {
         if (customToastMessage != null) {
-            delay(2500)
+            delay(2500.milliseconds)
             customToastMessage = null
         }
     }
@@ -159,8 +159,8 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
 
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant, // Bardziej szare tło (surfaceVariant)
-                shadowElevation = 0.dp, // Usunięty cień
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shadowElevation = 0.dp,
                 modifier = Modifier.padding(vertical = 8.dp)
             ) {
                 Row(

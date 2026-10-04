@@ -37,6 +37,7 @@ import timeleaf.shared.generated.resources.Nunito_Light
 import timeleaf.shared.generated.resources.Nunito_Medium
 import timeleaf.shared.generated.resources.Nunito_Regular
 import timeleaf.shared.generated.resources.Nunito_SemiBold
+import kotlin.time.Duration.Companion.milliseconds
 
 private val ModernLightColorScheme = lightColorScheme(
     primary = Color(0xFF10B981),
@@ -73,8 +74,6 @@ private val ModernDarkColorScheme = darkColorScheme(
     onBackground = Color(0xFFF9FAFB),
     outlineVariant = Color(0xFF2B2E38)
 )
-
-var appForceDarkMode by mutableStateOf<Boolean?>(null)
 
 @Composable
 @Preview
@@ -126,7 +125,7 @@ fun App() {
         val unlockedAch = UserStats.latestUnlockedPopup
         LaunchedEffect(unlockedAch) {
             if (unlockedAch != null) {
-                delay(3500L)
+                delay(3500L.milliseconds)
                 UserStats.latestUnlockedPopup = null
             }
         }

@@ -1,41 +1,70 @@
 package com.lumatech.timeleaf
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import timeleaf.shared.generated.resources.Res
 import timeleaf.shared.generated.resources.baseline_arrow_back_ios_new_24
 import timeleaf.shared.generated.resources.baseline_bolt_24
+import timeleaf.shared.generated.resources.baseline_check_24
+import timeleaf.shared.generated.resources.baseline_edit_24
 import timeleaf.shared.generated.resources.baseline_emoji_events_24
+import timeleaf.shared.generated.resources.baseline_fire_24
+import timeleaf.shared.generated.resources.baseline_history_24
 import timeleaf.shared.generated.resources.baseline_person_24
+import timeleaf.shared.generated.resources.baseline_settings_24
 import timeleaf.shared.generated.resources.baseline_star_24
 import timeleaf.shared.generated.resources.baseline_timer_24
+import kotlin.math.sin
+import kotlin.time.Duration.Companion.milliseconds
+
+data class TaskItemModel(
+    val id: Int,
+    val title: String,
+    var isCompleted: Boolean = false
+)
 
 @Composable
 @Preview
-fun ProfileScreen() {
+fun ProfileScreen(onOpenSettings: () -> Unit = {}) {
     var showAchievementsScreen by remember { mutableStateOf(false) }
 
     AnimatedContent(
@@ -52,15 +81,35 @@ fun ProfileScreen() {
         if (inAchievements) {
             AchievementsScreen(onBackClick = { showAchievementsScreen = false })
         } else {
-            ProfileMainView(onOpenAchievements = { showAchievementsScreen = true })
+            ProfileMainView(
+                onOpenAchievements = { showAchievementsScreen = true },
+                onOpenSettings = onOpenSettings
+            )
         }
     }
 }
 
 @Composable
-private fun ProfileMainView(onOpenAchievements: () -> Unit) {
+private fun ProfileMainView(
+    onOpenAchievements: () -> Unit,
+    onOpenSettings: () -> Unit
+) {
     var dialogTitle by remember { mutableStateOf<String?>(null) }
     var dialogDesc by remember { mutableStateOf<String?>(null) }
+
+    val focusMinutes = UserStats.totalFocusMinutes
+
+    val tasks = remember {
+        mutableStateListOf(
+            TaskItemModel(1, "Analiza Raportu Kwartalnego"),
+            TaskItemModel(2, "Planowanie Projektu"),
+            TaskItemModel(3, "Spotkanie Zespołu")
+        )
+    }
+
+    var isAddingTask by remember { mutableStateOf(false) }
+    var newTaskTitle by remember { mutableStateOf("") }
+    var nextTaskId by remember { mutableStateOf(4) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -68,82 +117,95 @@ private fun ProfileMainView(onOpenAchievements: () -> Unit) {
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            Text(
-                text = LocalizedStrings.profileGreeting,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Black,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier
-                    .windowInsetsPadding(WindowInsets.statusBars)
-                    .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 12.dp)
-            )
-
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 80.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 80.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                // User Greeting & Info Card (Clickable)
                 item {
-                    Surface(
-                        onClick = {
-                            dialogTitle = LocalizedStrings.profileLevelInfoTitle
-                            dialogDesc = LocalizedStrings.profileLevelInfoDesc
-                        },
-                        shape = RoundedCornerShape(24.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.fillMaxWidth()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.statusBars)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(20.dp)
+                        Text(
+                            text = "Witaj w profilu!",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        Surface(
+                            onClick = {
+                                dialogTitle = LocalizedStrings.profileLevelInfoTitle
+                                dialogDesc = LocalizedStrings.profileLevelInfoDesc
+                            },
+                            shape = RoundedCornerShape(26.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+                            shadowElevation = 0.dp,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                text = LocalizedStrings.profileGreeting,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(20.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Surface(
                                     shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    color = MaterialTheme.colorScheme.primaryContainer,
                                     modifier = Modifier.size(60.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
                                             painter = painterResource(Res.drawable.baseline_person_24),
                                             contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onPrimary,
-                                            modifier = Modifier.size(30.dp)
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(32.dp)
                                         )
                                     }
                                 }
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = LocalizedStrings.profileUserName,
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Black,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        text = "Poziom Ekspert",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Surface(
-                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
-                                        shape = CircleShape
-                                    ) {
-                                        Text(
-                                            text = LocalizedStrings.profileUserLevel,
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                                        )
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Surface(
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Text(
+                                                text = "Lvl 4",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(12.dp))
+
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(8.dp)
+                                                .clip(CircleShape)
+                                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxHeight()
+                                                    .fillMaxWidth(0.65f)
+                                                    .clip(CircleShape)
+                                                    .background(MaterialTheme.colorScheme.primary)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -151,69 +213,9 @@ private fun ProfileMainView(onOpenAchievements: () -> Unit) {
                     }
                 }
 
-                // Stat Cards (Real Data)
                 item {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            StatCard(
-                                title = "Wynik Skupienia",
-                                value = UserStats.focusScore.toString(),
-                                suffix = "/100",
-                                iconRes = Res.drawable.baseline_star_24,
-                                modifier = Modifier.weight(1f),
-                                highlight = true,
-                                onClick = {
-                                    dialogTitle = LocalizedStrings.profileScoreTitle
-                                    dialogDesc = "${LocalizedStrings.profileScoreDesc}${UserStats.focusScore}/100"
-                                }
-                            )
-                            StatCard(
-                                title = "Dni z rzędu",
-                                value = UserStats.streakDays.toString(),
-                                suffix = " dni",
-                                iconRes = Res.drawable.baseline_bolt_24,
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    dialogTitle = LocalizedStrings.profileStreakTitle
-                                    dialogDesc = "${LocalizedStrings.profileStreakDesc}${UserStats.streakDays} dni."
-                                }
-                            )
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            StatCard(
-                                title = LocalizedStrings.profileCompletedSessions,
-                                value = UserStats.completedSessions.toString(),
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    dialogTitle = LocalizedStrings.profileSessionsTitle
-                                    dialogDesc = "${LocalizedStrings.profileSessionsDesc}${UserStats.completedSessions}."
-                                }
-                            )
-                            val totalMins = UserStats.totalFocusMinutes
-                            val timeStr = if (totalMins >= 60) "${totalMins / 60}h ${totalMins % 60}m" else "${totalMins}m"
-                            StatCard(
-                                title = LocalizedStrings.profileFocusTime,
-                                value = timeStr,
-                                iconRes = Res.drawable.baseline_timer_24,
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    dialogTitle = LocalizedStrings.profileTimeTitle
-                                    dialogDesc = "${LocalizedStrings.profileTimeDesc}$timeStr."
-                                }
-                            )
-                        }
-                    }
-                }
-
-                // Activity Chart Card (Real Data)
-                item {
-                    ActivityChartCard(
+                    DesignerChartCard(
+                        score = UserStats.focusScore.toString(),
                         onClick = {
                             dialogTitle = LocalizedStrings.profileChartTitle
                             dialogDesc = LocalizedStrings.profileChartDesc
@@ -221,102 +223,240 @@ private fun ProfileMainView(onOpenAchievements: () -> Unit) {
                     )
                 }
 
-                // Achievements Navigation Card (Dynamic count)
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        val cardModifier = Modifier.width(115.dp).aspectRatio(1f)
+
+                        FocusScoreStatCard(
+                            score = UserStats.focusScore,
+                            trend = "+5%",
+                            modifier = cardModifier,
+                            onClick = {
+                                dialogTitle = LocalizedStrings.profileScoreTitle
+                                dialogDesc = "${LocalizedStrings.profileScoreDesc}${UserStats.focusScore}/100"
+                            }
+                        )
+
+                        StreakStatCard(
+                            streak = UserStats.streakDays,
+                            modifier = cardModifier,
+                            onClick = {
+                                dialogTitle = LocalizedStrings.profileStreakTitle
+                                dialogDesc = "${LocalizedStrings.profileStreakDesc}${UserStats.streakDays} dni."
+                            }
+                        )
+
+                        TimeStatCard(
+                            minutes = focusMinutes,
+                            modifier = cardModifier,
+                            onClick = {
+                                dialogTitle = LocalizedStrings.profileTimeTitle
+                                dialogDesc = "Twój łączny czas skupienia to ${focusMinutes} minut."
+                            }
+                        )
+                    }
+                }
+
                 item {
                     Surface(
-                        onClick = onOpenAchievements,
                         shape = RoundedCornerShape(20.dp),
                         color = MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                        shadowElevation = 0.dp,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(18.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                                .padding(vertical = 16.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    modifier = Modifier.size(48.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            painter = painterResource(Res.drawable.baseline_emoji_events_24),
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.secondary,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Column {
-                                    Text(
-                                        text = LocalizedStrings.profileAchievementsTitle,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "${UserStats.unlockedAchievements.size} z 7 ${LocalizedStrings.profileAchievementsSubtitle}",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            Text(
+                                text = "Zadania",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            )
+
+                            tasks.forEach { task ->
+                                key(task.id) {
+                                    AnimatedTaskItem(
+                                        task = task,
+                                        onComplete = {
+                                            val index = tasks.indexOf(task)
+                                            if (index != -1) {
+                                                tasks[index] = task.copy(isCompleted = true)
+                                            }
+                                        },
+                                        onRemove = {
+                                            tasks.remove(task)
+                                        }
                                     )
                                 }
                             }
-                            Icon(
-                                painter = painterResource(Res.drawable.baseline_arrow_back_ios_new_24),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .rotate(180f)
-                            )
+
+                            if (tasks.isEmpty() && !isAddingTask) {
+                                Text(
+                                    text = "Brak zadań na dziś. Odpoczywaj!",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                )
+                            }
+
+                            AnimatedVisibility(visible = isAddingTask) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    OutlinedTextField(
+                                        value = newTaskTitle,
+                                        onValueChange = { newTaskTitle = it },
+                                        placeholder = { Text("Wpisz zadanie...", style = MaterialTheme.typography.bodyMedium) },
+                                        modifier = Modifier.weight(1f),
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                                        )
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    IconButton(
+                                        onClick = {
+                                            if (newTaskTitle.isNotBlank()) {
+                                                tasks.add(TaskItemModel(nextTaskId++, newTaskTitle.trim()))
+                                                newTaskTitle = ""
+                                                isAddingTask = false
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(Res.drawable.baseline_check_24),
+                                            contentDescription = "Zapisz",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+
+                            AnimatedVisibility(visible = !isAddingTask) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { isAddingTask = true }
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        painter = painterResource(Res.drawable.baseline_edit_24),
+                                        contentDescription = "Dodaj zadanie",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Text(
+                                        text = "Dodaj nowe zadanie...",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
                         }
+                    }
+                }
+
+                item {
+                    Text(
+                        text = "Skróty",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(bottom = 2.dp, top = 4.dp)
+                    )
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        SmallIconTile(
+                            iconRes = Res.drawable.baseline_emoji_events_24,
+                            iconTint = Color(0xFFF59E0B),
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            onClick = onOpenAchievements,
+                            modifier = Modifier.weight(1f).aspectRatio(1f)
+                        )
+                        SmallIconTile(
+                            iconRes = Res.drawable.baseline_history_24,
+                            iconTint = Color(0xFF3B82F6),
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            onClick = {
+                                dialogTitle = LocalizedStrings.profileSessionsTitle
+                                dialogDesc = "${LocalizedStrings.profileSessionsDesc}${UserStats.completedSessions}."
+                            },
+                            modifier = Modifier.weight(1f).aspectRatio(1f)
+                        )
+                        SmallIconTile(
+                            iconRes = Res.drawable.baseline_settings_24,
+                            iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            onClick = onOpenSettings,
+                            modifier = Modifier.weight(1f).aspectRatio(1f)
+                        )
+                        SmallIconTile(
+                            iconRes = Res.drawable.baseline_settings_24, // Placeholder
+                            iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            onClick = { /* Placeholder action */ },
+                            modifier = Modifier.weight(1f).aspectRatio(1f)
+                        )
                     }
                 }
             }
         }
 
-        // Info Dialog Popup
         if (dialogTitle != null && dialogDesc != null) {
             Dialog(onDismissRequest = { dialogTitle = null; dialogDesc = null }) {
                 Surface(
-                    shape = RoundedCornerShape(28.dp),
+                    shape = RoundedCornerShape(24.dp),
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 0.dp,
                     shadowElevation = 8.dp,
-                    modifier = Modifier.widthIn(max = 340.dp)
+                    modifier = Modifier.widthIn(max = 320.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(28.dp),
+                        modifier = Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
                             text = dialogTitle ?: "",
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Black,
+                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = dialogDesc ?: "",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
-                            lineHeight = 22.sp
+                            lineHeight = 20.sp
                         )
-                        Spacer(modifier = Modifier.height(28.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
                         Button(
                             onClick = { dialogTitle = null; dialogDesc = null },
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth().height(44.dp),
+                            shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = MaterialTheme.colorScheme.onPrimary
@@ -324,7 +464,7 @@ private fun ProfileMainView(onOpenAchievements: () -> Unit) {
                         ) {
                             Text(
                                 text = LocalizedStrings.btnClose,
-                                fontSize = 15.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -336,62 +476,123 @@ private fun ProfileMainView(onOpenAchievements: () -> Unit) {
 }
 
 @Composable
-fun StatCard(
-    title: String,
-    value: String,
+fun FlipContainer(
+    front: @Composable () -> Unit,
+    back: @Composable () -> Unit
+) {
+    var flipped by remember { mutableStateOf(false) }
+    val rotation by animateFloatAsState(
+        targetValue = if (flipped) 180f else 0f,
+        animationSpec = tween(500),
+        label = "flipAnimation"
+    )
+
+    Box(
+        modifier = Modifier
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { flipped = !flipped }
+            .graphicsLayer {
+                rotationY = rotation
+                cameraDistance = 12f * density
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        if (rotation <= 90f) {
+            front()
+        } else {
+            Box(modifier = Modifier.graphicsLayer { rotationY = 180f }) {
+                back()
+            }
+        }
+    }
+}
+
+@Composable
+fun FocusScoreStatCard(
+    score: Int,
+    trend: String,
     modifier: Modifier = Modifier,
-    suffix: String = "",
-    iconRes: DrawableResource? = null,
-    highlight: Boolean = false,
-    onClick: (() -> Unit)? = null
+    onClick: () -> Unit
 ) {
     Surface(
-        onClick = onClick ?: {},
-        enabled = onClick != null,
-        modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
-        color = if (highlight) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surface
+        onClick = onClick,
+        shape = RoundedCornerShape(24.dp),
+        color = Color(0xFFF3E8FF),
+        shadowElevation = 0.dp,
+        modifier = modifier
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                )
-                if (iconRes != null) {
-                    Icon(
-                        painter = painterResource(iconRes),
-                        contentDescription = null,
-                        tint = if (highlight) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                        modifier = Modifier.size(16.dp)
-                    )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val dotRadius = 1.5.dp.toPx()
+                val spacing = 12.dp.toPx()
+                for (x in 0..(size.width.toInt()) step spacing.toInt()) {
+                    val waveY = sin(x.toFloat() * 0.05f) * 15f
+                    for (y in 0..(size.height.toInt()) step spacing.toInt()) {
+                        drawCircle(
+                            color = Color(0xFFC4B5FD).copy(alpha = 0.5f),
+                            radius = dotRadius,
+                            center = Offset(x.toFloat(), y.toFloat() + waveY)
+                        )
+                    }
                 }
             }
-            Spacer(modifier = Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Black,
-                    color = if (highlight) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                )
-                if (suffix.isNotEmpty()) {
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.TopEnd
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(
+                            progress = { score / 100f },
+                            modifier = Modifier.size(42.dp),
+                            color = Color(0xFF9333EA),
+                            trackColor = Color(0xFFD8B4FE),
+                            strokeWidth = 3.dp,
+                            strokeCap = StrokeCap.Round
+                        )
+
+                        FlipContainer(
+                            front = {
+                                Icon(
+                                    painter = painterResource(Res.drawable.baseline_bolt_24),
+                                    contentDescription = null,
+                                    tint = Color(0xFF9333EA),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            },
+                            back = {
+                                Text(
+                                    text = trend,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF9333EA),
+                                    fontSize = 11.sp
+                                )
+                            }
+                        )
+                    }
+                }
+
+                Column {
                     Text(
-                        text = suffix,
-                        style = MaterialTheme.typography.labelMedium,
+                        text = score.toString(),
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(start = 2.dp, bottom = 4.dp)
+                        color = Color(0xFF111827)
+                    )
+                    Text(
+                        text = "Skupienie",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF9333EA)
                     )
                 }
             }
@@ -400,12 +601,305 @@ fun StatCard(
 }
 
 @Composable
-fun ActivityChartCard(onClick: (() -> Unit)? = null) {
+fun StreakStatCard(
+    streak: Int,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
     Surface(
-        onClick = onClick ?: {},
-        enabled = onClick != null,
-        shape = RoundedCornerShape(20.dp),
+        onClick = onClick,
+        shape = RoundedCornerShape(24.dp),
+        color = Color(0xFFFFF7ED),
+        shadowElevation = 0.dp,
+        modifier = modifier
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val path1 = Path().apply {
+                    moveTo(size.width * 0.4f, 0f)
+                    lineTo(size.width, size.height * 0.6f)
+                    lineTo(size.width, 0f)
+                    close()
+                }
+                drawPath(path1, color = Color(0xFFFDBA74).copy(alpha = 0.2f))
+
+                val path2 = Path().apply {
+                    moveTo(0f, size.height * 0.4f)
+                    lineTo(size.width * 0.8f, size.height)
+                    lineTo(0f, size.height)
+                    close()
+                }
+                drawPath(path2, color = Color(0xFFFDBA74).copy(alpha = 0.25f))
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.TopEnd
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Canvas(modifier = Modifier.size(42.dp)) {
+                            drawArc(
+                                color = Color(0xFFFDBA74).copy(alpha = 0.4f),
+                                startAngle = 0f,
+                                sweepAngle = 360f,
+                                useCenter = false,
+                                style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
+                            )
+                        }
+
+                        FlipContainer(
+                            front = {
+                                Icon(
+                                    painter = painterResource(Res.drawable.baseline_fire_24),
+                                    contentDescription = "Fire Streak",
+                                    tint = Color(0xFFEA580C),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            },
+                            back = {
+                                Text(
+                                    text = "+1",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFEA580C),
+                                    fontSize = 12.sp
+                                )
+                            }
+                        )
+                    }
+                }
+
+                Column {
+                    Text(
+                        text = streak.toString(),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF111827)
+                    )
+                    Text(
+                        text = "Dni",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFEA580C)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TimeStatCard(
+    minutes: Int,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(24.dp),
+        color = Color(0xFFECFDF5),
+        shadowElevation = 0.dp,
+        modifier = modifier
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                for(i in 1..4) {
+                    drawCircle(
+                        color = Color(0xFF34D399).copy(alpha = 0.1f * (5 - i)),
+                        radius = size.width * 0.25f * i,
+                        center = Offset(size.width, 0f),
+                        style = Stroke(width = 2.dp.toPx())
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.TopEnd
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Canvas(modifier = Modifier.size(42.dp)) {
+                            drawArc(
+                                color = Color(0xFFA7F3D0),
+                                startAngle = 0f,
+                                sweepAngle = 360f,
+                                useCenter = false,
+                                style = Stroke(width = 4.dp.toPx())
+                            )
+                            drawArc(
+                                color = Color(0xFF10B981),
+                                startAngle = -90f,
+                                sweepAngle = 210f, // Przykładowy postęp
+                                useCenter = false,
+                                style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
+                            )
+                        }
+
+                        FlipContainer(
+                            front = {
+                                Icon(
+                                    painter = painterResource(Res.drawable.baseline_timer_24),
+                                    contentDescription = null,
+                                    tint = Color(0xFF059669),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            },
+                            back = {
+                                Text(
+                                    text = "+15m",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF059669),
+                                    fontSize = 11.sp
+                                )
+                            }
+                        )
+                    }
+                }
+
+                Column {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            text = minutes.toString(),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF111827)
+                        )
+                        Text(
+                            text = " m",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF059669),
+                            modifier = Modifier.padding(bottom = 2.dp)
+                        )
+                    }
+                    Text(
+                        text = "Czas",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF059669)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AnimatedTaskItem(
+    task: TaskItemModel,
+    onComplete: () -> Unit,
+    onRemove: () -> Unit
+) {
+    var isVisible by remember { mutableStateOf(true) }
+
+    LaunchedEffect(task.isCompleted) {
+        if (task.isCompleted) {
+            delay(500.milliseconds)
+            isVisible = false
+            delay(300.milliseconds)
+            onRemove()
+        }
+    }
+
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = expandVertically() + fadeIn(),
+        exit = shrinkVertically() + fadeOut(animationSpec = tween(300))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = !task.isCompleted) { onComplete() }
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(if (task.isCompleted) Color(0xFF9333EA) else Color.Transparent)
+                    .border(
+                        width = 2.dp,
+                        color = if (task.isCompleted) Color(0xFF9333EA) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (task.isCompleted) {
+                    Icon(
+                        painter = painterResource(Res.drawable.baseline_check_24),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+
+            val textProgress by animateFloatAsState(targetValue = if (task.isCompleted) 1f else 0f)
+
+            Text(
+                text = task.title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = if (task.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
+                textDecoration = if (textProgress > 0.5f) TextDecoration.LineThrough else TextDecoration.None
+            )
+        }
+    }
+}
+
+@Composable
+fun SmallIconTile(
+    iconRes: DrawableResource,
+    iconTint: Color,
+    containerColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(18.dp),
+        color = containerColor,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+        shadowElevation = 0.dp,
+        modifier = modifier
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.size(36.dp) // Powiększone ikony skrótów
+            )
+        }
+    }
+}
+
+@Composable
+fun DesignerChartCard(score: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(22.dp),
         color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+        shadowElevation = 0.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -413,24 +907,59 @@ fun ActivityChartCard(onClick: (() -> Unit)? = null) {
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            Text(
-                text = "Aktywność w tym tygodniu",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(24.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Statystyki",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            text = score,
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            lineHeight = 28.sp
+                        )
+                        Text(
+                            text = " /100 pkt.",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.padding(start = 2.dp, bottom = 4.dp)
+                        )
+                    }
+                    Text(
+                        text = "+5% od wczoraj",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF10B981),
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             val lineColor = MaterialTheme.colorScheme.primary
             val gradientColors = listOf(
-                lineColor.copy(alpha = 0.3f),
+                lineColor.copy(alpha = 0.2f),
                 Color.Transparent
             )
 
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(100.dp)
+                    .height(90.dp)
             ) {
                 val values = UserStats.weeklyActivity
                 val width = size.width
@@ -470,10 +999,25 @@ fun ActivityChartCard(onClick: (() -> Unit)? = null) {
                     path = path,
                     color = lineColor,
                     style = Stroke(
-                        width = 4.dp.toPx(),
+                        width = 3.dp.toPx(),
                         cap = StrokeCap.Round
                     )
                 )
+
+                values.forEachIndexed { i, value ->
+                    val x = i * stepX
+                    val y = height - (value * height)
+                    drawCircle(
+                        color = Color.White,
+                        radius = 4.dp.toPx(),
+                        center = Offset(x, y)
+                    )
+                    drawCircle(
+                        color = lineColor,
+                        radius = 2.5.dp.toPx(),
+                        center = Offset(x, y)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -486,7 +1030,7 @@ fun ActivityChartCard(onClick: (() -> Unit)? = null) {
                     Text(
                         text = day,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -497,6 +1041,16 @@ fun ActivityChartCard(onClick: (() -> Unit)? = null) {
 
 @Composable
 private fun AchievementsScreen(onBackClick: () -> Unit) {
+    val achievements = listOf(
+        Triple(LocalizedStrings.ach1Title, LocalizedStrings.ach1Desc, UserStats.unlockedAchievements.contains("first_step")),
+        Triple(LocalizedStrings.ach2Title, LocalizedStrings.ach2Desc, UserStats.unlockedAchievements.contains("session_creator")),
+        Triple(LocalizedStrings.ach3Title, LocalizedStrings.ach3Desc, UserStats.unlockedAchievements.contains("explorer")),
+        Triple(LocalizedStrings.ach4Title, LocalizedStrings.ach4Desc, UserStats.unlockedAchievements.contains("marathoner")),
+        Triple(LocalizedStrings.ach5Title, LocalizedStrings.ach5Desc, UserStats.unlockedAchievements.contains("focus_master")),
+        Triple(LocalizedStrings.ach6Title, LocalizedStrings.ach6Desc, UserStats.unlockedAchievements.contains("night_owl")),
+        Triple(LocalizedStrings.ach7Title, LocalizedStrings.ach7Desc, UserStats.unlockedAchievements.contains("flow_master"))
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -506,7 +1060,7 @@ private fun AchievementsScreen(onBackClick: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
@@ -515,147 +1069,87 @@ private fun AchievementsScreen(onBackClick: () -> Unit) {
             ) {
                 Icon(
                     painter = painterResource(Res.drawable.baseline_arrow_back_ios_new_24),
-                    contentDescription = LocalizedStrings.btnBack,
+                    contentDescription = "Cofnij",
                     tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(16.dp).offset(x = (-1).dp)
+                    modifier = Modifier.size(20.dp).offset(x = (-2).dp)
                 )
             }
-
             Spacer(modifier = Modifier.width(8.dp))
-
             Column {
                 Text(
-                    text = LocalizedStrings.achievementsHeaderTitle,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Black,
+                    text = "Osiągnięcia",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = LocalizedStrings.achievementsHeaderSub,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    text = "Zdobywaj nagrody za swoją produktywność",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                 )
             }
         }
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 80.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxSize()
         ) {
-            item {
-                AchievementCardItem(
-                    title = LocalizedStrings.ach1Title,
-                    description = LocalizedStrings.ach1Desc,
-                    isUnlocked = UserStats.unlockedAchievements.contains("first_step")
-                )
-            }
-            item {
-                AchievementCardItem(
-                    title = LocalizedStrings.ach2Title,
-                    description = LocalizedStrings.ach2Desc,
-                    isUnlocked = UserStats.unlockedAchievements.contains("session_creator")
-                )
-            }
-            item {
-                AchievementCardItem(
-                    title = LocalizedStrings.ach3Title,
-                    description = LocalizedStrings.ach3Desc,
-                    isUnlocked = UserStats.unlockedAchievements.contains("explorer")
-                )
-            }
-            item {
-                AchievementCardItem(
-                    title = LocalizedStrings.ach4Title,
-                    description = LocalizedStrings.ach4Desc,
-                    isUnlocked = UserStats.unlockedAchievements.contains("marathoner")
-                )
-            }
-            item {
-                AchievementCardItem(
-                    title = LocalizedStrings.ach5Title,
-                    description = LocalizedStrings.ach5Desc,
-                    isUnlocked = UserStats.unlockedAchievements.contains("focus_master")
-                )
-            }
-            item {
-                AchievementCardItem(
-                    title = LocalizedStrings.ach6Title,
-                    description = LocalizedStrings.ach6Desc,
-                    isUnlocked = UserStats.unlockedAchievements.contains("night_owl")
-                )
-            }
-            item {
-                AchievementCardItem(
-                    title = LocalizedStrings.ach7Title,
-                    description = LocalizedStrings.ach7Desc,
-                    isUnlocked = UserStats.unlockedAchievements.contains("flow_master")
-                )
+            items(achievements) { (title, desc, isUnlocked) ->
+                AchievementGridCard(title, desc, isUnlocked)
             }
         }
     }
 }
 
 @Composable
-fun AchievementCardItem(title: String, description: String, isUnlocked: Boolean) {
+fun AchievementGridCard(title: String, description: String, isUnlocked: Boolean) {
     Surface(
-        shape = RoundedCornerShape(22.dp),
-        color = if (isUnlocked) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxWidth()
+        shape = RoundedCornerShape(20.dp),
+        color = if (isUnlocked) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isUnlocked) 0f else 0.4f)),
+        shadowElevation = 0.dp,
+        modifier = Modifier.fillMaxWidth().aspectRatio(0.85f)
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Surface(
                 shape = CircleShape,
                 color = if (isUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier.size(48.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        painter = painterResource(Res.drawable.baseline_star_24),
+                        painter = painterResource(if (isUnlocked) Res.drawable.baseline_emoji_events_24 else Res.drawable.baseline_star_24),
                         contentDescription = null,
-                        tint = if (isUnlocked) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                        modifier = Modifier.size(20.dp)
+                        tint = if (isUnlocked) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isUnlocked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    lineHeight = 16.sp,
-                    color = if (isUnlocked) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Surface(
-                shape = CircleShape,
-                color = if (isUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                Text(
-                    text = if (isUnlocked) LocalizedStrings.achievementUnlocked else LocalizedStrings.achievementLocked,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isUnlocked) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                )
-            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = if (isUnlocked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = description,
+                style = MaterialTheme.typography.labelSmall,
+                color = if (isUnlocked) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center,
+                lineHeight = 14.sp
+            )
         }
     }
 }

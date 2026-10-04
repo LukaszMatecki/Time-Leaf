@@ -1,7 +1,6 @@
 package com.lumatech.timeleaf
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -229,7 +228,7 @@ fun App() {
                     when (page) {
                         0 -> TimeTilesScreen(onTileSelected = { selectedTab = 1 })
                         1 -> TimerScreen(onOpenSettings = { showSettings = true })
-                        2 -> ProfileScreen()
+                        2 -> ProfileScreen(onOpenSettings = { showSettings = true })
                     }
                 }
             }

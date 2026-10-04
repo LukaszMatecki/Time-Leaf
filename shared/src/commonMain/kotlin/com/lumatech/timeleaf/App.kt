@@ -52,7 +52,7 @@ private val ModernLightColorScheme = lightColorScheme(
     onSurface = Color(0xFF111827),
     surfaceVariant = Color(0xFFF1F3F5),
     onSurfaceVariant = Color(0xFF6B7280),
-    background = Color(0xFFF8F9FA),
+    background = Color(0xFFF5F6F7),
     onBackground = Color(0xFF111827),
     outlineVariant = Color(0xFFE5E7EB)
 )
@@ -81,7 +81,11 @@ var appForceDarkMode by mutableStateOf<Boolean?>(null)
 @Preview
 fun App() {
     val systemDark = isSystemInDarkTheme()
-    val isDark = appForceDarkMode ?: systemDark
+    val isDark = when (currentThemeMode) {
+        AppThemeMode.SYSTEM -> systemDark
+        AppThemeMode.LIGHT -> false
+        AppThemeMode.DARK -> true
+    }
     val colorScheme = if (isDark) ModernDarkColorScheme else ModernLightColorScheme
 
     val nunitoFontFamily = FontFamily(

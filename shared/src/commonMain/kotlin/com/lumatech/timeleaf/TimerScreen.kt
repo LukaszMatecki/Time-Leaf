@@ -47,6 +47,19 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
 
     var customToastMessage by remember { mutableStateOf<String?>(null) }
     var showStopDialog by remember { mutableStateOf(false) }
+    var showControls by remember { mutableStateOf(true) }
+
+    LaunchedEffect(manager.isRunning) {
+        if (manager.isRunning) {
+            showControls = true
+            delay(10000)
+            if (manager.isRunning) {
+                showControls = false
+            }
+        } else {
+            showControls = true
+        }
+    }
 
     LaunchedEffect(manager.isRunning) {
         if (manager.isRunning) {
@@ -84,6 +97,12 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
     val hasProgress = manager.remainingDuration < manager.targetDuration && manager.remainingDuration > ZERO
     val isInitial = !isRunning && !hasProgress
 
+    val controlsAlpha by animateFloatAsState(
+        targetValue = if (!isInitial && showControls) 1f else 0f,
+        animationSpec = tween(300),
+        label = "ControlsAlpha"
+    )
+
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -120,7 +139,14 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                     manager.isRunning = true
                     customToastMessage = "Sesja rozpoczęta"
                 } else {
-                    manager.isRunning = !manager.isRunning
+                    if (!showControls) {
+                        showControls = true
+                        manager.isRunning = false
+                        customToastMessage = "Sesja wstrzymana"
+                    } else {
+                        manager.isRunning = !manager.isRunning
+                        customToastMessage = if (manager.isRunning) "Sesja wznowiona" else "Sesja wstrzymana"
+                    }
                 }
             }
 
@@ -155,13 +181,13 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
 
             Row(
                 modifier = Modifier
-                    .alpha(if (isInitial) 0f else 1f),
+                    .alpha(if (isInitial) 0f else controlsAlpha),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
                     onClick = {
-                        if (!isInitial) {
+                        if (!isInitial && showControls) {
                             manager.isRunning = !manager.isRunning
                             customToastMessage = if (manager.isRunning) "Sesja wznowiona" else "Sesja wstrzymana"
                         }
@@ -188,7 +214,7 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
 
                 Surface(
                     onClick = {
-                        if (!isInitial) {
+                        if (!isInitial && showControls) {
                             manager.isRunning = false
                             showStopDialog = true
                         }

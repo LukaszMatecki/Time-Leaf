@@ -1,9 +1,6 @@
 package com.lumatech.timeleaf
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -17,7 +14,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,16 +24,9 @@ import org.jetbrains.compose.resources.painterResource
 import timeleaf.shared.generated.resources.Res
 import timeleaf.shared.generated.resources.baseline_add_24
 import timeleaf.shared.generated.resources.baseline_bolt_24
-import timeleaf.shared.generated.resources.baseline_schedule_24
+import timeleaf.shared.generated.resources.baseline_delete_24
 import timeleaf.shared.generated.resources.baseline_star_24
 import timeleaf.shared.generated.resources.baseline_timer_24
-
-data class TimeTileInfo(
-    val title: String,
-    val durationMinutes: Int,
-    val description: String,
-    val iconContent: @Composable (Color) -> Unit
-)
 
 @Composable
 @Preview
@@ -73,6 +62,10 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
                 iconContent = { tint -> TimerTileVectorIcon(tint = tint) }
             )
         )
+    }
+
+    val allTiles = remember(defaultTiles.size, sharedCustomTiles.size) {
+        defaultTiles + sharedCustomTiles
     }
 
     Column(
@@ -149,7 +142,7 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
                 }
             }
 
-            itemsIndexed(defaultTiles) { _, tile ->
+            itemsIndexed(allTiles) { _, tile ->
                 val isSelected = sharedTimerManager.targetDuration.inWholeMinutes == tile.durationMinutes.toLong() && sharedTimerManager.isCountdownMode
 
                 BentoTileCard(
@@ -158,7 +151,10 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
                     onClick = {
                         sharedTimerManager.setCountdown(tile.durationMinutes.minutes)
                         onTileSelected(tile)
-                    }
+                    },
+                    onDelete = if (tile.isCustom) {
+                        { sharedCustomTiles.remove(tile) }
+                    } else null
                 )
             }
         }
@@ -230,17 +226,18 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
 
                         Button(
                             onClick = {
-                                val name = if (customTitle.isBlank()) "Własna sesja" else customTitle.trim()
-                                val newTile = TimeTileInfo(
-                                    title = name,
-                                    durationMinutes = customMinutes,
-                                    description = "$customMinutes min",
-                                    iconContent = { tint -> TimerTileVectorIcon(tint = tint) }
-                                )
-
-                                defaultTiles.add(newTile)
+                                val name = customTitle.trim()
+                                if (name.isNotBlank()) {
+                                    val newTile = TimeTileInfo(
+                                        title = name,
+                                        durationMinutes = customMinutes,
+                                        isCustom = true,
+                                        iconContent = { tint -> TimerTileVectorIcon(tint = tint) }
+                                    )
+                                    sharedCustomTiles.add(newTile)
+                                }
                                 sharedTimerManager.setCountdown(customMinutes.minutes)
-                                onTileSelected(newTile)
+                                onTileSelected(TimeTileInfo(title = if (name.isBlank()) "Własna sesja" else name, durationMinutes = customMinutes, iconContent = { tint -> TimerTileVectorIcon(tint = tint) }))
 
                                 customTitle = ""
                                 customMinutes = 30
@@ -266,7 +263,8 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
 private fun BentoTileCard(
     tile: TimeTileInfo,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDelete: (() -> Unit)? = null
 ) {
     Surface(
         onClick = onClick,
@@ -274,12 +272,12 @@ private fun BentoTileCard(
         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
         modifier = Modifier
             .fillMaxWidth()
-            .height(135.dp)
+            .height(130.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(14.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
@@ -290,7 +288,7 @@ private fun BentoTileCard(
                 Surface(
                     shape = CircleShape,
                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.size(42.dp)
+                    modifier = Modifier.size(36.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         tile.iconContent(
@@ -301,81 +299,43 @@ private fun BentoTileCard(
 
                 Text(
                     text = "${tile.durationMinutes} min",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            Text(
-                text = tile.title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-
-                modifier = Modifier
-                    .padding(bottom = 5.dp)
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun ScrollableMinutePicker(selectedMinutes: Int, onMinutesChanged: (Int) -> Unit) {
-    val listState = rememberLazyListState(initialFirstVisibleItemIndex = (selectedMinutes - 1).coerceAtLeast(0))
-    val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
-
-    LaunchedEffect(listState) {
-        snapshotFlow { listState.firstVisibleItemIndex }.collect { index ->
-            onMinutesChanged(index + 1)
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(160.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .background(
-                    brush = Brush.horizontalGradient( // <- Zmiana na horizontalGradient
-                        colors = listOf(
-                            Color.Transparent,
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                            Color.Transparent
-                        )
-                    )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = tile.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f)
                 )
-        )
 
-        LazyColumn(
-            state = listState,
-            flingBehavior = flingBehavior,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(vertical = 56.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            items(120) { index ->
-                val minutes = index + 1
-                val isSelected = minutes == selectedMinutes
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .clickable { onMinutesChanged(minutes) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "$minutes min",
-                        style = if (isSelected) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleMedium,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
+                if (tile.isCustom && onDelete != null) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Surface(
+                        onClick = onDelete,
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f),
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                painter = painterResource(Res.drawable.baseline_delete_24),
+                                contentDescription = "Usuń",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -383,10 +343,76 @@ fun ScrollableMinutePicker(selectedMinutes: Int, onMinutesChanged: (Int) -> Unit
 }
 
 @Composable
-fun BoltVectorIcon(tint: Color) { Icon(painterResource(Res.drawable.baseline_bolt_24), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp)) }
+private fun BoltVectorIcon(tint: Color) {
+    Icon(
+        painter = painterResource(Res.drawable.baseline_bolt_24),
+        contentDescription = null,
+        tint = tint,
+        modifier = Modifier.size(22.dp)
+    )
+}
+
 @Composable
-fun TimerTileVectorIcon(tint: Color) { Icon(painterResource(Res.drawable.baseline_timer_24), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp)) }
+private fun WorkVectorIcon(tint: Color) {
+    Icon(
+        painter = painterResource(Res.drawable.baseline_star_24),
+        contentDescription = null,
+        tint = tint,
+        modifier = Modifier.size(22.dp)
+    )
+}
+
 @Composable
-fun WorkVectorIcon(tint: Color) { Icon(painterResource(Res.drawable.baseline_schedule_24), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp)) }
+private fun StarVectorIcon(tint: Color) {
+    Icon(
+        painter = painterResource(Res.drawable.baseline_star_24),
+        contentDescription = null,
+        tint = tint,
+        modifier = Modifier.size(22.dp)
+    )
+}
+
 @Composable
-fun StarVectorIcon(tint: Color) { Icon(painterResource(Res.drawable.baseline_star_24), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp)) }
+private fun TimerTileVectorIcon(tint: Color) {
+    Icon(
+        painter = painterResource(Res.drawable.baseline_timer_24),
+        contentDescription = null,
+        tint = tint,
+        modifier = Modifier.size(22.dp)
+    )
+}
+
+@Composable
+fun ScrollableMinutePicker(selectedMinutes: Int, onMinutesChanged: (Int) -> Unit) {
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = (selectedMinutes - 1).coerceAtLeast(0))
+
+    LaunchedEffect(listState.firstVisibleItemIndex) {
+        onMinutesChanged(listState.firstVisibleItemIndex + 1)
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(120.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxWidth().height(120.dp),
+            contentPadding = PaddingValues(vertical = 40.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            items(120) { index ->
+                val minute = index + 1
+                val isSelected = minute == selectedMinutes
+                Text(
+                    text = "$minute min",
+                    style = if (isSelected) MaterialTheme.typography.titleLarge else MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+        }
+    }
+}

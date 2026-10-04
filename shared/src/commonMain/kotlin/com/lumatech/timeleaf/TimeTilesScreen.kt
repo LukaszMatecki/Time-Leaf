@@ -20,8 +20,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.time.Duration.Companion.minutes
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
@@ -97,14 +102,13 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
         defaultTiles + sharedCustomTiles
     }
 
-    // Paleta akcentów dla kafelków
     val accentColors = listOf(
-        Color(0xFF8B5CF6), // Violet
-        Color(0xFF10B981), // Emerald
-        Color(0xFF3B82F6), // Blue
-        Color(0xFFF59E0B), // Amber
-        Color(0xFFEC4899), // Pink
-        Color(0xFF06B6D4)  // Cyan
+        Color(0xFF9EA8DB),
+        Color(0xFF80CBC4),
+        Color(0xFF90CAF9),
+        Color(0xFFFFCC80),
+        Color(0xFFF48FB1),
+        Color(0xFFBCAAA4)
     )
 
     Column(
@@ -115,35 +119,38 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
         Column(
             modifier = Modifier
                 .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 12.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 16.dp)
         ) {
             Text(
                 text = LocalizedStrings.tilesHeaderTitle,
-                style = MaterialTheme.typography.headlineSmall, // Zmniejszono z headlineMedium
-                fontWeight = FontWeight.Bold, // Zmieniono z Black na Bold
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = LocalizedStrings.tilesHeaderSubtitle,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
             )
         }
 
+        DailyOverviewSummary()
+
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 80.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 80.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Kafelek dodawania nowej sesji - Pełna szerokość, designerski gradient
             item(span = { GridItemSpan(2) }) {
                 Surface(
                     onClick = { showCustomModal = true },
                     shape = RoundedCornerShape(24.dp),
                     color = Color.Transparent,
-                    shadowElevation = 4.dp,
+                    shadowElevation = 0.dp,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Box(
@@ -151,21 +158,30 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
                             .fillMaxWidth()
                             .background(
                                 brush = Brush.linearGradient(
-                                    colors = listOf(Color(0xFF6366F1), Color(0xFFA855F7))
+                                    colors = listOf(
+                                        Color(0xFF909CFF).copy(alpha = 0.9f),
+                                        Color(0xFFA76DF0).copy(alpha = 0.8f)
+                                    )
                                 )
                             )
                     ) {
-                        // Abstrakcyjny wzór kół
                         Canvas(modifier = Modifier.fillMaxSize()) {
+                            val w = size.width
+                            val h = size.height
+
+                            val wavePath = Path().apply {
+                                moveTo(0f, h * 0.5f)
+                                cubicTo(w * 0.3f, h * 0.2f, w * 0.7f, h * 0.9f, w, h * 0.4f)
+                                lineTo(w, h)
+                                lineTo(0f, h)
+                                close()
+                            }
+                            drawPath(wavePath, Color.White.copy(alpha = 0.08f))
+
                             drawCircle(
-                                color = Color.White.copy(alpha = 0.1f),
-                                radius = size.height * 0.8f,
-                                center = Offset(size.width * 0.9f, size.height * 0.2f)
-                            )
-                            drawCircle(
-                                color = Color.White.copy(alpha = 0.05f),
-                                radius = size.height * 0.5f,
-                                center = Offset(size.width * 0.1f, size.height * 0.9f)
+                                color = Color.White.copy(alpha = 0.12f),
+                                radius = h * 0.7f,
+                                center = Offset(w * 0.9f, h * 0.1f)
                             )
                         }
 
@@ -176,16 +192,16 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Surface(
-                                shape = RoundedCornerShape(16.dp),
+                                shape = CircleShape,
                                 color = Color.White.copy(alpha = 0.25f),
-                                modifier = Modifier.size(52.dp)
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         painter = painterResource(Res.drawable.baseline_add_24),
                                         contentDescription = LocalizedStrings.tilesCustomCardTitle,
                                         tint = Color.White,
-                                        modifier = Modifier.size(26.dp)
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
                             }
@@ -193,15 +209,14 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = LocalizedStrings.tilesCustomCardTitle,
-                                    style = MaterialTheme.typography.titleMedium, // Zmniejszono z titleLarge
-                                    fontWeight = FontWeight.Bold, // Zmieniono z Black na Bold
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
                                     color = Color.White
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = LocalizedStrings.tilesCustomCardSub,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Normal,
                                     color = Color.White.copy(alpha = 0.85f)
                                 )
                             }
@@ -218,6 +233,7 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
                     tile = tile,
                     isSelected = isSelected,
                     accentColor = accentColor,
+                    patternIndex = index % 3,
                     onClick = {
                         sharedTimerManager.setCountdown(tile.durationMinutes.minutes)
                         onTileSelected(tile)
@@ -233,14 +249,14 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
     if (tileToDelete != null) {
         Dialog(onDismissRequest = { tileToDelete = null }) {
             Surface(
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 0.dp,
                 shadowElevation = 8.dp,
                 modifier = Modifier.widthIn(max = 320.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(28.dp),
+                    modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Surface(
@@ -260,46 +276,46 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
                     Spacer(modifier = Modifier.height(20.dp))
                     Text(
                         text = if (currentAppLanguage == AppLanguage.PL) "Usunąć sesję?" else "Delete session?",
-                        style = MaterialTheme.typography.titleLarge, // Zmniejszono
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = if (currentAppLanguage == AppLanguage.PL) "Czy na pewno chcesz usunąć tę sesję? Tej operacji nie można cofnąć." else "Are you sure you want to delete this session? This action cannot be undone.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(28.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Button(
                             onClick = { tileToDelete = null },
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.weight(1f).height(44.dp),
+                            shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         ) {
-                            Text(text = LocalizedStrings.btnNo, fontWeight = FontWeight.SemiBold)
+                            Text(text = LocalizedStrings.btnNo, fontWeight = FontWeight.Medium)
                         }
                         Button(
                             onClick = {
                                 tileToDelete?.let { sharedCustomTiles.remove(it) }
                                 tileToDelete = null
                             },
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.weight(1f).height(44.dp),
+                            shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.error,
                                 contentColor = MaterialTheme.colorScheme.onError
                             )
                         ) {
-                            Text(text = LocalizedStrings.btnYes, fontWeight = FontWeight.SemiBold)
+                            Text(text = LocalizedStrings.btnYes, fontWeight = FontWeight.Medium)
                         }
                     }
                 }
@@ -323,8 +339,8 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
                 ) {
                     Text(
                         text = LocalizedStrings.dialogCustomTitle,
-                        style = MaterialTheme.typography.titleLarge, // Zmniejszono z headlineSmall
-                        fontWeight = FontWeight.Bold, // Zmieniono z Black na Bold
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
@@ -463,43 +479,174 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
 }
 
 @Composable
+fun DailyOverviewSummary() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Surface(
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.baseline_bolt_24),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = "Dzisiejszy cel",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "3/5",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
+
+        Surface(
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color(0xFF10B981).copy(alpha = 0.1f),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.baseline_self_improvement_24),
+                        contentDescription = null,
+                        tint = Color(0xFF10B981),
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = "Czas skupienia",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "2h 15m",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun BentoTileCard(
     tile: TimeTileInfo,
     isSelected: Boolean,
     accentColor: Color,
+    patternIndex: Int,
     onClick: () -> Unit,
     onDelete: (() -> Unit)? = null
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(24.dp),
         color = if (isSelected) accentColor else MaterialTheme.colorScheme.surface,
-        border = if (!isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)) else null,
-        shadowElevation = if (isSelected) 4.dp else 0.dp, // Delikatniejszy cień
+        border = if (!isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)) else null,
+        shadowElevation = if (isSelected) 8.dp else 0.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .height(130.dp) // Lekko obniżone z 140dp
+            .aspectRatio(1f)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Abstrakcyjne tło dla urozmaicenia
             Canvas(modifier = Modifier.fillMaxSize()) {
-                val circleAlpha = if (isSelected) 0.15f else 0.03f
-                drawCircle(
-                    color = if (isSelected) Color.White.copy(alpha = circleAlpha) else accentColor.copy(alpha = circleAlpha),
-                    radius = size.width * 0.5f,
-                    center = Offset(size.width, 0f)
-                )
-                drawCircle(
-                    color = if (isSelected) Color.White.copy(alpha = circleAlpha * 0.5f) else accentColor.copy(alpha = circleAlpha * 0.5f),
-                    radius = size.width * 0.3f,
-                    center = Offset(0f, size.height)
-                )
+                val patternAlpha = if (isSelected) 0.25f else 0.1f
+                val basePatternColor = if (isSelected) Color.White else accentColor
+                val w = size.width
+                val h = size.height
+
+                when (patternIndex) {
+                    0 -> {
+                        val path1 = Path().apply {
+                            moveTo(0f, h * 0.5f)
+                            cubicTo(w * 0.3f, h * 0.3f, w * 0.7f, h * 0.7f, w, h * 0.4f)
+                            lineTo(w, h)
+                            lineTo(0f, h)
+                            close()
+                        }
+                        drawPath(path1, basePatternColor.copy(alpha = patternAlpha * 0.7f))
+
+                        val path2 = Path().apply {
+                            moveTo(0f, h * 0.7f)
+                            cubicTo(w * 0.4f, h * 1.0f, w * 0.6f, h * 0.4f, w, h * 0.6f)
+                            lineTo(w, h)
+                            lineTo(0f, h)
+                            close()
+                        }
+                        drawPath(path2, basePatternColor.copy(alpha = patternAlpha))
+                    }
+                    1 -> {
+                        val spacing = 20f
+                        for (x in 0..(w.toInt()) step spacing.toInt()) {
+                            for (y in 0..(h.toInt()) step spacing.toInt()) {
+                                val wave = sin(x * 0.03f + y * 0.03f) * cos(x * 0.02f)
+                                val dotRadius = 1.5f + wave * 2.5f
+                                if (dotRadius > 0) {
+                                    drawCircle(
+                                        color = basePatternColor.copy(alpha = patternAlpha * 0.8f),
+                                        radius = dotRadius,
+                                        center = Offset(x.toFloat(), y.toFloat())
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    2 -> {
+                        drawCircle(
+                            color = basePatternColor.copy(alpha = patternAlpha * 0.3f),
+                            radius = w * 0.25f,
+                            center = Offset(w, 0f)
+                        )
+                        drawCircle(
+                            color = basePatternColor.copy(alpha = patternAlpha * 0.6f),
+                            radius = w * 0.45f,
+                            center = Offset(0f, h)
+                        )
+                    }
+                }
             }
 
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(14.dp), // Zmniejszono padding
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(
@@ -510,7 +657,7 @@ private fun BentoTileCard(
                     Surface(
                         shape = CircleShape,
                         color = if (isSelected) Color.White.copy(alpha = 0.25f) else accentColor.copy(alpha = 0.15f),
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(42.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             tile.iconContent(
@@ -519,40 +666,49 @@ private fun BentoTileCard(
                         }
                     }
 
-                    if (tile.isCustom && onDelete != null) {
-                        Surface(
-                            onClick = onDelete,
-                            shape = CircleShape,
-                            color = if (isSelected) Color.White.copy(alpha = 0.2f) else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    painter = painterResource(Res.drawable.baseline_delete_24),
-                                    contentDescription = "Usuń",
-                                    tint = if (isSelected) Color.White else MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) Color.White.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                    ) {
+                        Text(
+                            text = "${tile.durationMinutes} min",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        )
                     }
                 }
 
-                Column {
-                    Text(
-                        text = "${tile.durationMinutes} min",
-                        style = MaterialTheme.typography.titleLarge, // Zmniejszono z headlineMedium
-                        fontWeight = FontWeight.Bold, // Zmieniono z Black na Bold
-                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(bottom = 2.dp)
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
                     Text(
                         text = tile.title,
-                        style = MaterialTheme.typography.titleSmall, // Zmieniono z labelMedium na titleSmall
-                        fontWeight = FontWeight.SemiBold, // Zmieniono z Bold
-                        color = if (isSelected) Color.White.copy(alpha = 0.9f) else MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        modifier = Modifier.weight(1f)
                     )
+
+                    if (tile.isCustom && onDelete != null) {
+                        IconButton(
+                            onClick = onDelete,
+                            modifier = Modifier
+                                .size(28.dp)
+                                .padding(start = 4.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(Res.drawable.baseline_delete_24),
+                                contentDescription = "Usuń",
+                                tint = if (isSelected) Color.White.copy(alpha = 0.9f) else MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -637,7 +793,7 @@ fun ScrollableIconPicker(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .height(76.dp) // Lekko zmniejszono
+            .height(76.dp)
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
@@ -657,7 +813,7 @@ fun ScrollableIconPicker(
         Surface(
             shape = CircleShape,
             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-            modifier = Modifier.size(56.dp) // Zmniejszono z 64dp
+            modifier = Modifier.size(56.dp)
         ) {}
 
         LazyRow(
@@ -676,14 +832,14 @@ fun ScrollableIconPicker(
                 Surface(
                     shape = CircleShape,
                     color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                    modifier = Modifier.size(44.dp) // Zmniejszono z 48dp
+                    modifier = Modifier.size(44.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             painter = painterResource(iconRes),
                             contentDescription = null,
                             tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha),
-                            modifier = Modifier.size(if (isSelected) 22.dp else 20.dp) // Mniejsze ikonki
+                            modifier = Modifier.size(if (isSelected) 22.dp else 20.dp)
                         )
                     }
                 }
@@ -726,7 +882,7 @@ fun ScrollableMinutePicker(selectedMinutes: Int, onMinutesChanged: (Int) -> Unit
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .height(130.dp) // Zmniejszono ze 140dp
+            .height(130.dp)
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
@@ -746,7 +902,7 @@ fun ScrollableMinutePicker(selectedMinutes: Int, onMinutesChanged: (Int) -> Unit
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp) // Zmniejszono z 52dp
+                .height(48.dp)
                 .background(
                     brush = Brush.horizontalGradient(
                         colors = listOf(
@@ -777,8 +933,8 @@ fun ScrollableMinutePicker(selectedMinutes: Int, onMinutesChanged: (Int) -> Unit
                 ) {
                     Text(
                         text = "$minute min",
-                        style = if (isSelected) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium, // Zmniejszono z headlineSmall
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium, // Zmieniono z Black
+                        style = if (isSelected) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                 }

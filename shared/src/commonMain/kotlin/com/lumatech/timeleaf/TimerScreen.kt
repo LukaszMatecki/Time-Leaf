@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +35,7 @@ import timeleaf.shared.generated.resources.Res
 import timeleaf.shared.generated.resources.baseline_notifications_off_24
 import timeleaf.shared.generated.resources.baseline_pause_circle_24
 import timeleaf.shared.generated.resources.baseline_play_circle_outline_24
+import timeleaf.shared.generated.resources.baseline_refresh_24
 import timeleaf.shared.generated.resources.baseline_settings_24
 import timeleaf.shared.generated.resources.baseline_stop_circle_24
 import kotlin.time.Duration
@@ -134,7 +136,7 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(0.6f))
 
             TimerClockView(manager = manager) {
                 if (isInitial) {
@@ -153,29 +155,30 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(36.dp))
 
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                modifier = Modifier.alpha(0.8f)
+                color = MaterialTheme.colorScheme.surfaceVariant, // Bardziej szare tło (surfaceVariant)
+                shadowElevation = 0.dp, // Usunięty cień
+                modifier = Modifier.padding(vertical = 8.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         painter = painterResource(Res.drawable.baseline_notifications_off_24),
                         contentDescription = "Tryb skupienia",
                         modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = "Nie przeszkadzać",
                         fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
@@ -184,10 +187,41 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
 
             Row(
                 modifier = Modifier
-                    .alpha(if (isInitial) 0f else controlsAlpha),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    .alpha(if (isInitial) 0f else controlsAlpha)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Przycisk Restart
+                Surface(
+                    onClick = {
+                        if (!isInitial && showControls) {
+                            manager.isRunning = false
+                            manager.remainingDuration = manager.targetDuration // Zresetowanie czasu do pełni
+                            manager.reset()
+                            customToastMessage = "Sesja zresetowana"
+                        }
+                    },
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.size(52.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(Res.drawable.baseline_refresh_24),
+                            contentDescription = "Od nowa",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(20.dp))
+
+                // Przycisk Play/Pauza
                 Surface(
                     onClick = {
                         if (!isInitial && showControls) {
@@ -196,8 +230,8 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                         }
                     },
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.size(56.dp)
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(72.dp)
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -209,12 +243,15 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                                 else Res.drawable.baseline_play_circle_outline_24
                             ),
                             contentDescription = if (isRunning) "Wstrzymaj" else "Wznów",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(28.dp)
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(36.dp)
                         )
                     }
                 }
 
+                Spacer(modifier = Modifier.width(20.dp))
+
+                // Przycisk Stop
                 Surface(
                     onClick = {
                         if (!isInitial && showControls) {
@@ -224,7 +261,7 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                     },
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier.size(52.dp)
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -234,13 +271,13 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                             painter = painterResource(Res.drawable.baseline_stop_circle_24),
                             contentDescription = "Zakończ",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(26.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(72.dp))
         }
 
         AnimatedVisibility(
@@ -355,72 +392,102 @@ private fun TimerClockView(manager: TimerManager, onClick: () -> Unit) {
 
     Box(
         modifier = Modifier
-            .fillMaxWidth(0.85f)
+            .fillMaxWidth(0.9f)
             .aspectRatio(1f)
-            .padding(8.dp)
+            .padding(16.dp)
             .clip(CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        val trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
         val primaryColor = MaterialTheme.colorScheme.primary
         val secondaryColor = MaterialTheme.colorScheme.secondary
+        val trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
 
         val gradientBrush = remember(primaryColor, secondaryColor) {
             Brush.linearGradient(colors = listOf(primaryColor, secondaryColor))
         }
 
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val strokeWidth = 12.dp.toPx()
+            val strokeWidth = 14.dp.toPx()
             val radius = (size.minDimension - strokeWidth) / 2f
             val diameter = radius * 2f
+            val center = Offset(size.width / 2, size.height / 2)
+            val arcTopLeft = Offset(center.x - radius, center.y - radius)
+            val arcSize = Size(diameter, diameter)
 
+            // Łuna rozlewa się wyłącznie na zewnątrz
+            if (animatedProgress > 0f) {
+                val glowLayers = 4
+                for (i in glowLayers downTo 1) {
+                    val glowW = i * 12.dp.toPx()
+                    // Zmiana promienia sprawia, że łuna na wewnętrznej krawędzi styka się
+                    // ze środkiem głównego okręgu (lub zewnętrzną krawędzią), a rozszerza się tylko na zewnątrz
+                    val glowRadius = radius + (glowW / 2f)
+                    val glowTopLeft = Offset(center.x - glowRadius, center.y - glowRadius)
+
+                    drawArc(
+                        brush = gradientBrush,
+                        startAngle = -90f,
+                        sweepAngle = 360f * animatedProgress,
+                        useCenter = false,
+                        topLeft = glowTopLeft,
+                        size = Size(glowRadius * 2f, glowRadius * 2f),
+                        style = Stroke(width = glowW, cap = StrokeCap.Round),
+                        alpha = 0.08f
+                    )
+                }
+            }
+
+            // Subtelny pasek bazowy (tło)
             drawCircle(
                 color = trackColor,
                 radius = radius,
                 style = Stroke(width = strokeWidth)
             )
 
+            // Aktywny, wypełniający się pasek postępu
             drawArc(
                 brush = gradientBrush,
                 startAngle = -90f,
                 sweepAngle = 360f * animatedProgress,
                 useCenter = false,
-                topLeft = Offset(strokeWidth / 2f, strokeWidth / 2f),
-                size = Size(diameter, diameter),
+                topLeft = arcTopLeft,
+                size = arcSize,
                 style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
             )
         }
 
-        Box(
+        Column(
             modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = formatDuration(manager.remainingDuration),
-                fontSize = 60.sp,
+                fontSize = 68.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 letterSpacing = 1.sp,
                 textAlign = TextAlign.Center
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
             AnimatedContent(
                 targetState = when {
                     isInitial -> "Dotknij, aby rozpocząć"
-                    isRunning -> "Dotknij, aby wstrzymać"
-                    else -> "Dotknij, aby wznowić"
+                    isRunning -> "Skup się..."
+                    else -> "Sesja wstrzymana"
                 },
                 transitionSpec = {
                     fadeIn(tween(300)) togetherWith fadeOut(tween(300))
                 },
-                label = "TimerActionText",
-                modifier = Modifier.offset(y = 45.dp)
+                label = "TimerActionText"
             ) { text ->
                 Text(
                     text = text,
                     fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center
                 )

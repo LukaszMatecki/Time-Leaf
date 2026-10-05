@@ -74,11 +74,10 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                     if (manager.isCountdownMode) {
                         val newRemaining = manager.remainingDuration - elapsed
                         if (newRemaining <= ZERO) {
-                            manager.remainingDuration = ZERO
-                            manager.isRunning = false
                             val minutesSpent = manager.targetDuration.inWholeMinutes.toInt()
+                            manager.reset()
                             UserStats.recordCompletedSession(minutesSpent)
-                            customToastMessage = "Sesja zakończona! Statystyki zaktualizowane 🎉"
+                            customToastMessage = LocalizedStrings.timerCompletedToast
                         } else {
                             manager.remainingDuration = newRemaining
                         }
@@ -142,15 +141,15 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                 if (isInitial) {
                     manager.isRunning = true
                     UserStats.recordStartTimer()
-                    customToastMessage = "Sesja rozpoczęta"
+                    customToastMessage = LocalizedStrings.timerStartedToast
                 } else {
                     if (!showControls) {
                         showControls = true
                         manager.isRunning = false
-                        customToastMessage = "Sesja wstrzymana"
+                        customToastMessage = LocalizedStrings.timerPausedToast
                     } else {
                         manager.isRunning = !manager.isRunning
-                        customToastMessage = if (manager.isRunning) "Sesja wznowiona" else "Sesja wstrzymana"
+                        customToastMessage = if (manager.isRunning) LocalizedStrings.timerResumedToast else LocalizedStrings.timerPausedToast
                     }
                 }
             }
@@ -159,7 +158,7 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
 
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
                 shadowElevation = 0.dp,
                 modifier = Modifier.padding(vertical = 8.dp)
             ) {
@@ -169,13 +168,13 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                 ) {
                     Icon(
                         painter = painterResource(Res.drawable.baseline_notifications_off_24),
-                        contentDescription = "Tryb skupienia",
+                        contentDescription = LocalizedStrings.timerDndMode,
                         modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "Nie przeszkadzać",
+                        text = LocalizedStrings.timerDndMode,
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold
@@ -192,15 +191,12 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Przycisk Restart
                 Surface(
                     onClick = {
-                        if (!isInitial && showControls) {
-                            manager.isRunning = false
-                            manager.remainingDuration = manager.targetDuration // Zresetowanie czasu do pełni
-                            manager.reset()
-                            customToastMessage = "Sesja zresetowana"
-                        }
+                        manager.isRunning = false
+                        manager.remainingDuration = manager.targetDuration
+                        manager.reset()
+                        customToastMessage = LocalizedStrings.timerResetToast
                     },
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surfaceVariant,
@@ -221,12 +217,11 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
 
                 Spacer(modifier = Modifier.width(20.dp))
 
-                // Przycisk Play/Pauza
                 Surface(
                     onClick = {
                         if (!isInitial && showControls) {
                             manager.isRunning = !manager.isRunning
-                            customToastMessage = if (manager.isRunning) "Sesja wznowiona" else "Sesja wstrzymana"
+                            customToastMessage = if (manager.isRunning) LocalizedStrings.timerResumedToast else LocalizedStrings.timerPausedToast
                         }
                     },
                     shape = CircleShape,
@@ -251,7 +246,6 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
 
                 Spacer(modifier = Modifier.width(20.dp))
 
-                // Przycisk Stop
                 Surface(
                     onClick = {
                         if (!isInitial && showControls) {
@@ -282,12 +276,11 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
 
         AnimatedVisibility(
             visible = customToastMessage != null,
-            enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(top = 16.dp)
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 175.dp)
         ) {
             Surface(
                 shape = CircleShape,
@@ -318,13 +311,13 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Zakończyć sesję?",
+                            text = LocalizedStrings.timerStopDialogTitle,
                             style = MaterialTheme.typography.headlineSmall,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Obecny postęp czasu zostanie zresetowany. Czy na pewno chcesz przerwać?",
+                            text = LocalizedStrings.timerStopDialogDesc,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -343,7 +336,7 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                                 )
                             ) {
                                 Text(
-                                    text = "Anuluj",
+                                    text = LocalizedStrings.timerBtnCancel,
                                     style = MaterialTheme.typography.titleMedium
                                 )
                             }
@@ -351,7 +344,7 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                                 onClick = {
                                     manager.reset()
                                     showStopDialog = false
-                                    customToastMessage = "Sesja zresetowana"
+                                    customToastMessage = LocalizedStrings.timerResetToast
                                 },
                                 modifier = Modifier.weight(1f).height(48.dp),
                                 colors = ButtonDefaults.buttonColors(
@@ -360,7 +353,7 @@ fun TimerScreen(onOpenSettings: () -> Unit = {}) {
                                 )
                             ) {
                                 Text(
-                                    text = "Zakończ",
+                                    text = LocalizedStrings.timerBtnStop,
                                     style = MaterialTheme.typography.titleMedium
                                 )
                             }
@@ -401,7 +394,7 @@ private fun TimerClockView(manager: TimerManager, onClick: () -> Unit) {
     ) {
         val primaryColor = MaterialTheme.colorScheme.primary
         val secondaryColor = MaterialTheme.colorScheme.secondary
-        val trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
+        val trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
 
         val gradientBrush = remember(primaryColor, secondaryColor) {
             Brush.linearGradient(colors = listOf(primaryColor, secondaryColor))
@@ -415,46 +408,25 @@ private fun TimerClockView(manager: TimerManager, onClick: () -> Unit) {
             val arcTopLeft = Offset(center.x - radius, center.y - radius)
             val arcSize = Size(diameter, diameter)
 
-            // Łuna rozlewa się wyłącznie na zewnątrz
-            if (animatedProgress > 0f) {
-                val glowLayers = 4
-                for (i in glowLayers downTo 1) {
-                    val glowW = i * 12.dp.toPx()
-                    // Zmiana promienia sprawia, że łuna na wewnętrznej krawędzi styka się
-                    // ze środkiem głównego okręgu (lub zewnętrzną krawędzią), a rozszerza się tylko na zewnątrz
-                    val glowRadius = radius + (glowW / 2f)
-                    val glowTopLeft = Offset(center.x - glowRadius, center.y - glowRadius)
-
-                    drawArc(
-                        brush = gradientBrush,
-                        startAngle = -90f,
-                        sweepAngle = 360f * animatedProgress,
-                        useCenter = false,
-                        topLeft = glowTopLeft,
-                        size = Size(glowRadius * 2f, glowRadius * 2f),
-                        style = Stroke(width = glowW, cap = StrokeCap.Round),
-                        alpha = 0.08f
-                    )
-                }
-            }
-
-            // Subtelny pasek bazowy (tło)
+            // Szara tło-ścieżka (trail) widoczna pod obrysem timera
             drawCircle(
                 color = trackColor,
                 radius = radius,
                 style = Stroke(width = strokeWidth)
             )
 
-            // Aktywny, wypełniający się pasek postępu
-            drawArc(
-                brush = gradientBrush,
-                startAngle = -90f,
-                sweepAngle = 360f * animatedProgress,
-                useCenter = false,
-                topLeft = arcTopLeft,
-                size = arcSize,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-            )
+            // Aktywny, wypełniający się pasek postępu z gradientem
+            if (animatedProgress > 0f) {
+                drawArc(
+                    brush = gradientBrush,
+                    startAngle = -90f,
+                    sweepAngle = 360f * animatedProgress,
+                    useCenter = false,
+                    topLeft = arcTopLeft,
+                    size = arcSize,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                )
+            }
         }
 
         Column(
@@ -475,9 +447,9 @@ private fun TimerClockView(manager: TimerManager, onClick: () -> Unit) {
 
             AnimatedContent(
                 targetState = when {
-                    isInitial -> "Dotknij, aby rozpocząć"
-                    isRunning -> "Skup się..."
-                    else -> "Sesja wstrzymana"
+                    isInitial -> LocalizedStrings.timerTapToStart
+                    isRunning -> LocalizedStrings.timerFocusing
+                    else -> LocalizedStrings.timerPausedLabel
                 },
                 transitionSpec = {
                     fadeIn(tween(300)) togetherWith fadeOut(tween(300))

@@ -155,8 +155,8 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
                             .background(
                                 brush = Brush.linearGradient(
                                     colors = listOf(
-                                        Color(0xFF909CFF).copy(alpha = 0.9f),
-                                        Color(0xFFA76DF0).copy(alpha = 0.8f)
+                                        Color(0xFF7EE2B8),
+                                        Color(0xFF1B996B)
                                     )
                                 )
                             )
@@ -172,10 +172,10 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
                                 lineTo(0f, h)
                                 close()
                             }
-                            drawPath(wavePath, Color.White.copy(alpha = 0.08f))
+                            drawPath(wavePath, Color.White.copy(alpha = 0.15f))
 
                             drawCircle(
-                                color = Color.White.copy(alpha = 0.12f),
+                                color = Color.White.copy(alpha = 0.1f),
                                 radius = h * 0.7f,
                                 center = Offset(w * 0.9f, h * 0.1f)
                             )
@@ -213,7 +213,7 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
                                 Text(
                                     text = LocalizedStrings.tilesCustomCardSub,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.White.copy(alpha = 0.85f)
+                                    color = Color.White.copy(alpha = 0.9f)
                                 )
                             }
                         }
@@ -476,6 +476,17 @@ fun TimeTilesScreen(onTileSelected: (TimeTileInfo) -> Unit = {}) {
 
 @Composable
 fun DailyOverviewSummary() {
+    val todayMin = UserStats.todayFocusMinutes
+    val focusFormatted = if (todayMin == 0) {
+        "0m"
+    } else if (todayMin < 60) {
+        "${todayMin}m"
+    } else {
+        val h = todayMin / 60
+        val m = todayMin % 60
+        if (m == 0) "${h}h" else "${h}h ${m}m"
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -507,12 +518,12 @@ fun DailyOverviewSummary() {
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = "Dzisiejszy cel",
+                        text = LocalizedStrings.tilesGoalLabel,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "3/5",
+                        text = "${UserStats.todayCompletedSessions}/${UserStats.dailyGoal}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -546,12 +557,12 @@ fun DailyOverviewSummary() {
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = "Czas skupienia",
+                        text = LocalizedStrings.tilesFocusTimeLabel,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "2h 15m",
+                        text = focusFormatted,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface

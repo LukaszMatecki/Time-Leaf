@@ -47,6 +47,7 @@ import timeleaf.shared.generated.resources.baseline_check_24
 import timeleaf.shared.generated.resources.baseline_edit_24
 import timeleaf.shared.generated.resources.baseline_emoji_events_24
 import timeleaf.shared.generated.resources.baseline_fire_24
+import timeleaf.shared.generated.resources.baseline_help_24
 import timeleaf.shared.generated.resources.baseline_history_24
 import timeleaf.shared.generated.resources.baseline_person_24
 import timeleaf.shared.generated.resources.baseline_settings_24
@@ -61,27 +62,30 @@ data class TaskItemModel(
     var isCompleted: Boolean = false
 )
 
+enum class ProfileSubScreen { MAIN, ACHIEVEMENTS, HELP }
+
 @Composable
 @Preview
 fun ProfileScreen(onOpenSettings: () -> Unit = {}) {
-    var showAchievementsScreen by remember { mutableStateOf(false) }
+    var currentSubScreen by remember { mutableStateOf(ProfileSubScreen.MAIN) }
 
     AnimatedContent(
-        targetState = showAchievementsScreen,
+        targetState = currentSubScreen,
         transitionSpec = {
-            if (targetState) {
+            if (targetState != ProfileSubScreen.MAIN) {
                 slideInHorizontally { it } + fadeIn() togetherWith slideOutHorizontally { -it } + fadeOut()
             } else {
                 slideInHorizontally { -it } + fadeIn() togetherWith slideOutHorizontally { it } + fadeOut()
             }
         },
         label = "ProfileNav"
-    ) { inAchievements ->
-        if (inAchievements) {
-            AchievementsScreen(onBackClick = { showAchievementsScreen = false })
-        } else {
-            ProfileMainView(
-                onOpenAchievements = { showAchievementsScreen = true },
+    ) { sub ->
+        when (sub) {
+            ProfileSubScreen.ACHIEVEMENTS -> AchievementsScreen(onBackClick = { currentSubScreen = ProfileSubScreen.MAIN })
+            ProfileSubScreen.HELP -> HelpScreen(onBackClick = { currentSubScreen = ProfileSubScreen.MAIN })
+            ProfileSubScreen.MAIN -> ProfileMainView(
+                onOpenAchievements = { currentSubScreen = ProfileSubScreen.ACHIEVEMENTS },
+                onOpenHelp = { currentSubScreen = ProfileSubScreen.HELP },
                 onOpenSettings = onOpenSettings
             )
         }
@@ -91,12 +95,15 @@ fun ProfileScreen(onOpenSettings: () -> Unit = {}) {
 @Composable
 private fun ProfileMainView(
     onOpenAchievements: () -> Unit,
+    onOpenHelp: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
     var dialogTitle by remember { mutableStateOf<String?>(null) }
     var dialogDesc by remember { mutableStateOf<String?>(null) }
+    var showLevelDialog by remember { mutableStateOf(false) }
 
     val focusMinutes = UserStats.totalFocusMinutes
+    val lvlState = UserStats.currentLevelState
 
     val tasks = remember {
         mutableStateListOf(
@@ -128,7 +135,7 @@ private fun ProfileMainView(
                             .windowInsetsPadding(WindowInsets.statusBars)
                     ) {
                         Text(
-                            text = "Witaj w profilu!",
+                            text = LocalizedStrings.profileWelcome,
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground,
@@ -136,10 +143,7 @@ private fun ProfileMainView(
                         )
 
                         Surface(
-                            onClick = {
-                                dialogTitle = LocalizedStrings.profileLevelInfoTitle
-                                dialogDesc = LocalizedStrings.profileLevelInfoDesc
-                            },
+                            onClick = { showLevelDialog = true },
                             shape = RoundedCornerShape(26.dp),
                             color = MaterialTheme.colorScheme.surface,
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
@@ -169,7 +173,7 @@ private fun ProfileMainView(
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Poziom Ekspert",
+                                        text = lvlState.currentLevel.title(currentAppLanguage),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onSurface
@@ -181,7 +185,7 @@ private fun ProfileMainView(
                                             shape = RoundedCornerShape(8.dp)
                                         ) {
                                             Text(
-                                                text = "Lvl 4",
+                                                text = "Lvl ${lvlState.currentLevel.levelNumber}",
                                                 style = MaterialTheme.typography.labelMedium,
                                                 fontWeight = FontWeight.Bold,
                                                 color = MaterialTheme.colorScheme.primary,
@@ -200,7 +204,7 @@ private fun ProfileMainView(
                                             Box(
                                                 modifier = Modifier
                                                     .fillMaxHeight()
-                                                    .fillMaxWidth(0.65f)
+                                                    .fillMaxWidth(lvlState.progressInLevel)
                                                     .clip(CircleShape)
                                                     .background(MaterialTheme.colorScheme.primary)
                                             )
@@ -231,9 +235,13 @@ private fun ProfileMainView(
                     ) {
                         val cardModifier = Modifier.width(115.dp).aspectRatio(1f)
 
+                        val scoreTrend = if (UserStats.completedSessions > 0) "+5" else "0"
+                        val streakTrend = "${UserStats.streakDays}d"
+                        val timeTrend = "+${UserStats.todayFocusMinutes}m"
+
                         FocusScoreStatCard(
                             score = UserStats.focusScore,
-                            trend = "+5%",
+                            trend = scoreTrend,
                             modifier = cardModifier,
                             onClick = {
                                 dialogTitle = LocalizedStrings.profileScoreTitle
@@ -243,6 +251,7 @@ private fun ProfileMainView(
 
                         StreakStatCard(
                             streak = UserStats.streakDays,
+                            trend = streakTrend,
                             modifier = cardModifier,
                             onClick = {
                                 dialogTitle = LocalizedStrings.profileStreakTitle
@@ -252,6 +261,7 @@ private fun ProfileMainView(
 
                         TimeStatCard(
                             minutes = focusMinutes,
+                            trend = timeTrend,
                             modifier = cardModifier,
                             onClick = {
                                 dialogTitle = LocalizedStrings.profileTimeTitle
@@ -275,7 +285,7 @@ private fun ProfileMainView(
                                 .padding(vertical = 16.dp)
                         ) {
                             Text(
-                                text = "Zadania",
+                                text = LocalizedStrings.profileTasksTitle,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
@@ -301,7 +311,7 @@ private fun ProfileMainView(
 
                             if (tasks.isEmpty() && !isAddingTask) {
                                 Text(
-                                    text = "Brak zadań na dziś. Odpoczywaj!",
+                                    text = LocalizedStrings.profileNoTasks,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -318,7 +328,7 @@ private fun ProfileMainView(
                                     OutlinedTextField(
                                         value = newTaskTitle,
                                         onValueChange = { newTaskTitle = it },
-                                        placeholder = { Text("Wpisz zadanie...", style = MaterialTheme.typography.bodyMedium) },
+                                        placeholder = { Text(LocalizedStrings.profileAddTaskPlaceholder, style = MaterialTheme.typography.bodyMedium) },
                                         modifier = Modifier.weight(1f),
                                         singleLine = true,
                                         shape = RoundedCornerShape(12.dp),
@@ -362,7 +372,7 @@ private fun ProfileMainView(
                                     )
                                     Spacer(modifier = Modifier.width(16.dp))
                                     Text(
-                                        text = "Dodaj nowe zadanie...",
+                                        text = LocalizedStrings.profileAddNewTask,
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                     )
@@ -374,7 +384,7 @@ private fun ProfileMainView(
 
                 item {
                     Text(
-                        text = "Skróty",
+                        text = LocalizedStrings.profileShortcutsTitle,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground,
@@ -405,22 +415,29 @@ private fun ProfileMainView(
                             modifier = Modifier.weight(1f).aspectRatio(1f)
                         )
                         SmallIconTile(
+                            iconRes = Res.drawable.baseline_help_24,
+                            iconTint = Color(0xFF10B981),
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            onClick = onOpenHelp,
+                            modifier = Modifier.weight(1f).aspectRatio(1f)
+                        )
+                        SmallIconTile(
                             iconRes = Res.drawable.baseline_settings_24,
                             iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
                             containerColor = MaterialTheme.colorScheme.surface,
                             onClick = onOpenSettings,
                             modifier = Modifier.weight(1f).aspectRatio(1f)
                         )
-                        SmallIconTile(
-                            iconRes = Res.drawable.baseline_settings_24, // Placeholder
-                            iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            onClick = { /* Placeholder action */ },
-                            modifier = Modifier.weight(1f).aspectRatio(1f)
-                        )
                     }
                 }
             }
+        }
+
+        if (showLevelDialog) {
+            LevelBreakdownDialog(
+                levelState = UserStats.currentLevelState,
+                onDismiss = { showLevelDialog = false }
+            )
         }
 
         if (dialogTitle != null && dialogDesc != null) {
@@ -602,6 +619,7 @@ fun FocusScoreStatCard(
 @Composable
 fun StreakStatCard(
     streak: Int,
+    trend: String = "+1",
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -642,15 +660,15 @@ fun StreakStatCard(
                     contentAlignment = Alignment.TopEnd
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Canvas(modifier = Modifier.size(42.dp)) {
-                            drawArc(
-                                color = Color(0xFFFDBA74).copy(alpha = 0.4f),
-                                startAngle = 0f,
-                                sweepAngle = 360f,
-                                useCenter = false,
-                                style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
-                            )
-                        }
+                        val streakProgress = (streak / 30f).coerceIn(0.05f, 1f)
+                        CircularProgressIndicator(
+                            progress = { streakProgress },
+                            modifier = Modifier.size(42.dp),
+                            color = Color(0xFFEA580C),
+                            trackColor = Color(0xFFFED7AA),
+                            strokeWidth = 3.dp,
+                            strokeCap = StrokeCap.Round
+                        )
 
                         FlipContainer(
                             front = {
@@ -663,11 +681,11 @@ fun StreakStatCard(
                             },
                             back = {
                                 Text(
-                                    text = "+1",
+                                    text = trend,
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFFEA580C),
-                                    fontSize = 12.sp
+                                    fontSize = 11.sp
                                 )
                             }
                         )
@@ -696,6 +714,7 @@ fun StreakStatCard(
 @Composable
 fun TimeStatCard(
     minutes: Int,
+    trend: String = "+0m",
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -729,22 +748,16 @@ fun TimeStatCard(
                     contentAlignment = Alignment.TopEnd
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Canvas(modifier = Modifier.size(42.dp)) {
-                            drawArc(
-                                color = Color(0xFFA7F3D0),
-                                startAngle = 0f,
-                                sweepAngle = 360f,
-                                useCenter = false,
-                                style = Stroke(width = 4.dp.toPx())
-                            )
-                            drawArc(
-                                color = Color(0xFF10B981),
-                                startAngle = -90f,
-                                sweepAngle = 210f, // Przykładowy postęp
-                                useCenter = false,
-                                style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
-                            )
-                        }
+                        val todayMin = UserStats.todayFocusMinutes
+                        val timeProgress = if (todayMin > 0) (todayMin / 120f).coerceIn(0.05f, 1f) else (minutes / 300f).coerceIn(0.05f, 1f)
+                        CircularProgressIndicator(
+                            progress = { timeProgress },
+                            modifier = Modifier.size(42.dp),
+                            color = Color(0xFF059669),
+                            trackColor = Color(0xFFA7F3D0),
+                            strokeWidth = 3.dp,
+                            strokeCap = StrokeCap.Round
+                        )
 
                         FlipContainer(
                             front = {
@@ -757,7 +770,7 @@ fun TimeStatCard(
                             },
                             back = {
                                 Text(
-                                    text = "+15m",
+                                    text = trend,
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF059669),
@@ -937,13 +950,16 @@ fun DesignerChartCard(score: String, onClick: () -> Unit) {
                             modifier = Modifier.padding(start = 2.dp, bottom = 4.dp)
                         )
                     }
-                    Text(
-                        text = "+5% od wczoraj",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF10B981),
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
+                    val compText = UserStats.comparisonText
+                    if (compText != null) {
+                        Text(
+                            text = compText,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = if (compText.startsWith("-")) Color(0xFFEF4444) else Color(0xFF10B981),
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
                 }
             }
 
@@ -1076,13 +1092,13 @@ private fun AchievementsScreen(onBackClick: () -> Unit) {
             Spacer(modifier = Modifier.width(8.dp))
             Column {
                 Text(
-                    text = "Osiągnięcia",
+                    text = LocalizedStrings.profileAchievementsTitle,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = "Zdobywaj nagrody za swoją produktywność",
+                    text = LocalizedStrings.profileAchievementsSub,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                 )
@@ -1091,7 +1107,7 @@ private fun AchievementsScreen(onBackClick: () -> Unit) {
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 100.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxSize()
@@ -1149,6 +1165,189 @@ fun AchievementGridCard(title: String, description: String, isUnlocked: Boolean)
                 textAlign = TextAlign.Center,
                 lineHeight = 14.sp
             )
+        }
+    }
+}
+
+@Composable
+fun LevelBreakdownDialog(
+    levelState: UserLevelState,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            shadowElevation = 8.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.85f)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp)
+            ) {
+                Text(
+                    text = LocalizedStrings.profileLevelProgressionTitle,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = LocalizedStrings.profileCurrentLevel,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                )
+                                Text(
+                                    text = "${levelState.currentLevel.levelNumber}. ${levelState.currentLevel.title(currentAppLanguage)}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary
+                            ) {
+                                Text(
+                                    text = "${levelState.totalExp} XP",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+
+                        if (levelState.nextLevel != null) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = LocalizedStrings.profileExpNeeded(levelState.nextLevel.title(currentAppLanguage), levelState.expNeededForNextLevel),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                LazyColumn(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(allLevels.size) { index ->
+                        val lvl = allLevels[index]
+                        val isCurrent = lvl.levelNumber == levelState.currentLevel.levelNumber
+                        val isUnlocked = levelState.totalExp >= lvl.minExp
+
+                        Surface(
+                            shape = RoundedCornerShape(18.dp),
+                            color = if (isCurrent)
+                                MaterialTheme.colorScheme.primaryContainer
+                            else if (isUnlocked)
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                            else
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+                            border = if (isCurrent) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                                        modifier = Modifier.size(38.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Text(
+                                                text = "${lvl.levelNumber}",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (isCurrent) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Text(
+                                            text = lvl.title(currentAppLanguage),
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = if (lvl.maxExp == Int.MAX_VALUE) "${lvl.minExp}+ XP" else "${lvl.minExp} - ${lvl.maxExp} XP",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                if (isCurrent) {
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = MaterialTheme.colorScheme.primary
+                                    ) {
+                                        Text(
+                                            text = LocalizedStrings.profileYourLevelBadge,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                } else if (isUnlocked) {
+                                    Text(
+                                        text = "✓",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    Text(text = LocalizedStrings.btnClose, style = MaterialTheme.typography.titleMedium)
+                }
+            }
         }
     }
 }

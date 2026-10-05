@@ -1,6 +1,7 @@
 package com.lumatech.timeleaf
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -27,6 +28,7 @@ import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
 import timeleaf.shared.generated.resources.Res
 import timeleaf.shared.generated.resources.baseline_bolt_24
+import timeleaf.shared.generated.resources.baseline_emoji_events_24
 import timeleaf.shared.generated.resources.baseline_person_24
 import timeleaf.shared.generated.resources.baseline_timer_24
 import timeleaf.shared.generated.resources.Nunito_Black
@@ -167,19 +169,20 @@ fun App() {
             // Achievement Unlocked Popup Banner
             AnimatedVisibility(
                 visible = unlockedAch != null,
-                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn() + expandIn(expandFrom = Alignment.TopCenter),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut() + shrinkOut(shrinkTowards = Alignment.TopCenter),
                 modifier = Modifier
                     .zIndex(20f)
                     .fillMaxWidth()
                     .windowInsetsPadding(WindowInsets.statusBars)
-                    .padding(top = 16.dp)
-                    .padding(horizontal = 24.dp)
+                    .padding(top = 12.dp)
+                    .padding(horizontal = 20.dp)
             ) {
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(24.dp),
                     color = MaterialTheme.colorScheme.primaryContainer,
-                    shadowElevation = 8.dp
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                    shadowElevation = 0.dp
                 ) {
                     Row(
                         modifier = Modifier
@@ -190,10 +193,15 @@ fun App() {
                         Surface(
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(42.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text(text = "🏆", fontSize = 18.sp)
+                                Icon(
+                                    painter = painterResource(Res.drawable.baseline_emoji_events_24),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(22.dp)
+                                )
                             }
                         }
                         Spacer(modifier = Modifier.width(14.dp))

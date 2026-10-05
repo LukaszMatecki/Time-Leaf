@@ -1,6 +1,8 @@
 package com.lumatech.timeleaf
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -27,6 +30,7 @@ import timeleaf.shared.generated.resources.Res
 import timeleaf.shared.generated.resources.baseline_arrow_back_ios_new_24
 import timeleaf.shared.generated.resources.baseline_arrow_forward_ios_24
 import timeleaf.shared.generated.resources.baseline_bedtime_24
+import timeleaf.shared.generated.resources.baseline_check_24
 import timeleaf.shared.generated.resources.baseline_delete_24
 import timeleaf.shared.generated.resources.baseline_group_24
 import timeleaf.shared.generated.resources.baseline_help_24
@@ -48,7 +52,6 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
     var notificationsEnabled by remember { mutableStateOf(UserStats.pushNotifications) }
     var soundEnabled by remember { mutableStateOf(UserStats.soundEnabled) }
     var vibrationEnabled by remember { mutableStateOf(UserStats.vibrationEnabled) }
-    var autoBreak by remember { mutableStateOf(UserStats.autoBreak) }
     var keepScreenAwake by remember { mutableStateOf(UserStats.keepScreenAwake) }
 
     var languageExpanded by remember { mutableStateOf(false) }
@@ -56,9 +59,27 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
     var currentSubScreen by remember { mutableStateOf<SettingsSubScreen?>(null) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var deletionStage by remember { mutableStateOf(0) }
     var toastMessage by remember { mutableStateOf<String?>(null) }
 
     val uriHandler = LocalUriHandler.current
+
+    LaunchedEffect(deletionStage) {
+        when (deletionStage) {
+            1 -> {
+                delay(1200)
+                sharedCustomTiles.clear()
+                UserStats.resetAll()
+                deletionStage = 2
+            }
+            2 -> {
+                delay(1200)
+                showDeleteDialog = false
+                delay(300)
+                deletionStage = 0
+            }
+        }
+    }
 
     LaunchedEffect(toastMessage) {
         if (toastMessage != null) {
@@ -148,7 +169,6 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                                         SettingsSectionHeader(LocalizedStrings.settingsSectionAppearance)
                                     }
 
-                                    // Theme Mode Dropdown Item
                                     item {
                                         Column(modifier = Modifier.fillMaxWidth()) {
                                             val currentThemeText = when (currentThemeMode) {
@@ -197,7 +217,7 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                                                                         UserStats.updateSettings(
                                                                             currentAppLanguage, mode,
                                                                             notificationsEnabled, soundEnabled,
-                                                                            vibrationEnabled, autoBreak, keepScreenAwake
+                                                                            vibrationEnabled, false, keepScreenAwake
                                                                         )
                                                                         themeExpanded = false
                                                                     }
@@ -227,7 +247,6 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                                         }
                                     }
 
-                                    // Language Dropdown Item
                                     item {
                                         Column(modifier = Modifier.fillMaxWidth()) {
                                             val currentLangDisplayName = currentAppLanguage.displayName
@@ -267,7 +286,7 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                                                                         UserStats.updateSettings(
                                                                             lang, currentThemeMode,
                                                                             notificationsEnabled, soundEnabled,
-                                                                            vibrationEnabled, autoBreak, keepScreenAwake
+                                                                            vibrationEnabled, false, keepScreenAwake
                                                                         )
                                                                         languageExpanded = false
                                                                     }
@@ -312,7 +331,7 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                                                 UserStats.updateSettings(
                                                     currentAppLanguage, currentThemeMode,
                                                     notificationsEnabled, soundEnabled,
-                                                    vibrationEnabled, autoBreak, keepScreenAwake
+                                                    vibrationEnabled, false, keepScreenAwake
                                                 )
                                             }
                                         )
@@ -328,7 +347,7 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                                                 UserStats.updateSettings(
                                                     currentAppLanguage, currentThemeMode,
                                                     notificationsEnabled, soundEnabled,
-                                                    vibrationEnabled, autoBreak, keepScreenAwake
+                                                    vibrationEnabled, false, keepScreenAwake
                                                 )
                                             }
                                         )
@@ -341,22 +360,6 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
 
                                     item {
                                         SettingsSwitchItem(
-                                            iconRes = Res.drawable.baseline_timer_24,
-                                            title = LocalizedStrings.settingsAutoBreakTitle,
-                                            checked = autoBreak,
-                                            onCheckedChange = {
-                                                autoBreak = it
-                                                UserStats.updateSettings(
-                                                    currentAppLanguage, currentThemeMode,
-                                                    notificationsEnabled, soundEnabled,
-                                                    vibrationEnabled, autoBreak, keepScreenAwake
-                                                )
-                                            }
-                                        )
-                                    }
-
-                                    item {
-                                        SettingsSwitchItem(
                                             iconRes = Res.drawable.baseline_bedtime_24,
                                             title = LocalizedStrings.settingsKeepScreenTitle,
                                             checked = keepScreenAwake,
@@ -365,7 +368,7 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
                                                 UserStats.updateSettings(
                                                     currentAppLanguage, currentThemeMode,
                                                     notificationsEnabled, soundEnabled,
-                                                    vibrationEnabled, autoBreak, keepScreenAwake
+                                                    vibrationEnabled, false, keepScreenAwake
                                                 )
                                             }
                                         )
@@ -393,20 +396,20 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
 
                                     item {
                                         SettingsActionItem(
+                                            iconRes = Res.drawable.baseline_help_24,
+                                            title = LocalizedStrings.settingsHelpTitle,
+                                            onClick = { currentSubScreen = SettingsSubScreen.HELP }
+                                        )
+                                    }
+
+                                    item {
+                                        SettingsActionItem(
                                             iconRes = Res.drawable.baseline_group_24,
                                             title = LocalizedStrings.settingsAuthorsTitle,
                                             onClick = {
                                                 UserStats.recordVisitAuthors()
                                                 currentSubScreen = SettingsSubScreen.AUTHORS
                                             }
-                                        )
-                                    }
-
-                                    item {
-                                        SettingsActionItem(
-                                            iconRes = Res.drawable.baseline_help_24,
-                                            title = LocalizedStrings.settingsHelpTitle,
-                                            onClick = { currentSubScreen = SettingsSubScreen.HELP }
                                         )
                                     }
 
@@ -439,7 +442,6 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
         }
     }
 
-    // --- TOAST / SNACKBAR MESSAGE ---
     AnimatedVisibility(
         visible = toastMessage != null,
         enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
@@ -543,65 +545,168 @@ fun SettingsScreen(onBackClick: () -> Unit = {}) {
     }
 
     if (showDeleteDialog) {
-        Dialog(onDismissRequest = { showDeleteDialog = false }) {
+        Dialog(onDismissRequest = { if (deletionStage == 0) showDeleteDialog = false }) {
             Surface(
                 shape = RoundedCornerShape(28.dp),
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 0.dp,
                 shadowElevation = 8.dp,
-                modifier = Modifier.widthIn(max = 320.dp)
+                modifier = Modifier
+                    .widthIn(max = 320.dp)
+                    .animateContentSize()
             ) {
-                Column(
-                    modifier = Modifier.padding(28.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = LocalizedStrings.settingsDeleteDialogTitle,
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = LocalizedStrings.settingsDeleteDialogDesc,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(32.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = deletionStage == 0,
+                        enter = fadeIn(tween(300)),
+                        exit = fadeOut(tween(300))
                     ) {
-                        Button(
-                            onClick = { showDeleteDialog = false },
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(28.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                modifier = Modifier.size(56.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        painter = painterResource(Res.drawable.baseline_delete_24),
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = LocalizedStrings.btnNo,
-                                style = MaterialTheme.typography.titleMedium
+                                text = LocalizedStrings.settingsDeleteDialogTitle,
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = LocalizedStrings.settingsDeleteDialogDesc,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(28.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Button(
+                                    onClick = { showDeleteDialog = false },
+                                    modifier = Modifier.weight(1f).height(48.dp),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                ) {
+                                    Text(
+                                        text = LocalizedStrings.btnNo,
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                }
+                                Button(
+                                    onClick = { deletionStage = 1 },
+                                    modifier = Modifier.weight(1f).height(48.dp),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.error,
+                                        contentColor = MaterialTheme.colorScheme.onError
+                                    )
+                                ) {
+                                    Text(
+                                        text = LocalizedStrings.btnYes,
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                }
+                            }
                         }
-                        Button(
-                            onClick = {
-                                sharedCustomTiles.clear()
-                                UserStats.resetAll()
-                                showDeleteDialog = false
-                                toastMessage = LocalizedStrings.snackDataCleared
-                            },
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error,
-                                contentColor = MaterialTheme.colorScheme.onError
-                            )
+                    }
+
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = deletionStage > 0,
+                        enter = fadeIn(tween(300, delayMillis = 150)),
+                        exit = fadeOut(tween(300))
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(
-                                text = LocalizedStrings.btnYes,
-                                style = MaterialTheme.typography.titleMedium
-                            )
+                            AnimatedContent(
+                                targetState = deletionStage == 2,
+                                transitionSpec = {
+                                    (scaleIn(tween(400)) + fadeIn(tween(300))) togetherWith
+                                            (scaleOut(tween(300)) + fadeOut(tween(300)))
+                                },
+                                label = "iconTransition"
+                            ) { isDone ->
+                                if (!isDone) {
+                                    Box(
+                                        modifier = Modifier.size(72.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.fillMaxSize(),
+                                            color = MaterialTheme.colorScheme.error,
+                                            strokeWidth = 4.dp
+                                        )
+                                        Icon(
+                                            painter = painterResource(Res.drawable.baseline_delete_24),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.size(32.dp)
+                                        )
+                                    }
+                                } else {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = Color(0xFF10B981).copy(alpha = 0.15f),
+                                        modifier = Modifier.size(72.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                painter = painterResource(Res.drawable.baseline_check_24),
+                                                contentDescription = null,
+                                                tint = Color(0xFF10B981),
+                                                modifier = Modifier.size(36.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            AnimatedContent(
+                                targetState = deletionStage == 2,
+                                transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
+                                label = "textTransition"
+                            ) { isDone ->
+                                Text(
+                                    text = if (isDone) {
+                                        if (currentAppLanguage == AppLanguage.PL) "Usunięto!" else "Deleted!"
+                                    } else {
+                                        if (currentAppLanguage == AppLanguage.PL) "Usuwanie danych..." else "Deleting data..."
+                                    },
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isDone) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                         }
                     }
                 }
